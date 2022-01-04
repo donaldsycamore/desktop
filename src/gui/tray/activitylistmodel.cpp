@@ -235,6 +235,7 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
             return QVariant();
         }
     }
+    case Qt::DisplayRole:
     case ActionTextRole:
         if(a._subjectDisplay.isEmpty()) {
             return a._subject;
@@ -672,4 +673,20 @@ void ActivityListModel::slotRemoveAccount()
     _totalActivitiesFetched = 0;
     _showMoreActivitiesAvailableEntry = false;
 }
+
+void ActivityListModel::clearAll()
+{
+    _finalList.clear();
+    _activityLists.clear();
+    _syncFileItemLists.clear();
+    _notificationLists.clear();
+    _listOfIgnoredFiles.clear();
+    _notificationErrorsLists.clear();
+    _currentlyFetching = false;
+    _doneFetching = false;
+    _currentItem = 0;
+    _totalActivitiesFetched = 0;
+    _showMoreActivitiesAvailableEntry = false;
 }
+}
+
