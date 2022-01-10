@@ -83,9 +83,6 @@ public:
     void addSyncFileItemToActivityList(Activity activity);
     void removeActivityFromActivityList(int row);
     void removeActivityFromActivityList(Activity activity);
-    void clearAll();
-
-    int maxActivities() const { return _maxActivities; };
 
     Q_INVOKABLE void triggerDefaultAction(int activityIndex);
     Q_INVOKABLE void triggerAction(int activityIndex, int actionIndex);
