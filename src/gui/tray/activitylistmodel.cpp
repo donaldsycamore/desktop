@@ -235,7 +235,6 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
             return QVariant();
         }
     }
-    case Qt::DisplayRole:
     case ActionTextRole:
         if(a._subjectDisplay.isEmpty()) {
             return a._subject;
