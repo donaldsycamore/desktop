@@ -1,4 +1,4 @@
-import QtQuick 2.5
+import QtQuick 2.15
 import QtQuick.Controls 2.3
 import Style 1.0
 
@@ -17,7 +17,7 @@ Item {
     property string imageSourceHover: ""
 
     // Tooltip value
-    property string tooltipText: ""
+    property string toolTipText: ""
 
     // text color
     property color textColor: Style.unifiedSearchResulSublineColor
@@ -38,7 +38,7 @@ Item {
     signal clicked()
 
     Accessible.role: Accessible.Button
-    Accessible.name: root.text !== "" ? root.text : (root.tooltipText !== "" ? root.tooltipText : qsTr("Activity action button"))
+    Accessible.name: root.text !== "" ? root.text : (root.toolTipText !== "" ? root.toolTipText : qsTr("Activity action button"))
     Accessible.onPressAction: clicked()
 
     Label {
@@ -54,9 +54,9 @@ Item {
     }
 
     ToolTip {
-        text: root.tooltipText
+        text: root.toolTipText
         delay: 1000
-        visible: root.tooltipText != "" && root.hovered
+        visible: root.toolTipText !== "" && root.hovered
     }
 
     MouseArea {

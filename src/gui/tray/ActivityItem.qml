@@ -1,6 +1,6 @@
-import QtQml 2.12
-import QtQuick 2.9
-import QtQuick.Controls 2.2
+import QtQml 2.15
+import QtQuick 2.15
+import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.2
 import Style 1.0
 import com.nextcloud.desktopclient 1.0
@@ -11,12 +11,21 @@ MouseArea {
     readonly property int maxActionButtons: 2
     property Flickable flickable
 
-    height: (model.links.length > 0 || activityActions.isFileActivity) ? Style.trayWindowHeaderHeight * 2 : Style.trayWindowHeaderHeight
+    height: childrenRect.height
 
     signal fileActivityButtonClicked(string absolutePath)
 
-    enabled: (path !== "" || link !== "")
+    enabled: (model.path !== "" || model.link !== "")
     hoverEnabled: true
+
+    Accessible.role: Accessible.ListItem
+    Accessible.name: model.path !== "" ? qsTr("Open %1 locally").arg(model.displayPath)
+                                 : model.message
+    Accessible.onPressAction: root.clicked()
+
+    ToolTip.visible: containsMouse && model.displayLocation !== ""
+    ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
+    ToolTip.text: qsTr("In %1").arg(model.displayLocation)
 
     Rectangle {
         id: activityHover
@@ -25,32 +34,29 @@ MouseArea {
     }
 
     ColumnLayout {
-        width: root.width
-        spacing: 0
+        anchors.left: root.left
+        anchors.right: root.right
+        anchors.leftMargin: 10
+        anchors.rightMargin: 10
+        spacing: 5
 
         ActivityItemContent {
             id: activityContent
 
             activityData: model
 
-            onClicked: root.clicked()
 
             onShareButtonClicked: Systray.openShareDialog(model.displayPath, model.absolutePath)
 
             Layout.fillWidth: true
-            Layout.preferredHeight: Style.trayWindowHeaderHeight
-
-            Accessible.role: Accessible.ListItem
-            Accessible.name: path !== "" ? qsTr("Open %1 locally").arg(model.displayPath)
-                                         : model.message
-            Accessible.onPressAction: root.clicked()
         }
 
         ActivityItemActions {
             id: activityActions
+
             Layout.preferredHeight: Style.trayWindowHeaderHeight
-            Layout.leftMargin: 20
             Layout.fillHeight: true
+            Layout.fillWidth: true
 
             activityData: model
 

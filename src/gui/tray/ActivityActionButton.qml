@@ -1,71 +1,56 @@
-import QtQuick 2.5
+import QtQuick 2.15
 import QtQuick.Controls 2.3
+import QtQuick.Layouts 1.2
 import Style 1.0
 
 Item {
     id: root
 
-    // label value
     property string text: ""
+    property string toolTipText: ""
 
-    // icon value
     property string imageSource: ""
-
-    // icon value hovered
     property string imageSourceHover: ""
 
-    // Tooltip value
-    property string tooltipText: ""
-
-    // text color
     property color textColor: Style.ncTextColor
     property color textColorHovered: Style.lightHover
-
-    // icon background color
-    property color bgColor: Style.ncBlue
-
-    // text border color
-    property color textBorderColor: "transparent"
 
     signal clicked()
 
     Loader {
-        active: root.isDismissAction === true
+        active: root.imageSource === ""
 
         anchors.fill: parent
 
         sourceComponent: CustomTextButton {
              anchors.fill: parent
-             onClicked: root.clicked()
              text: root.text
-             tooltipText: root.tooltipText
+             toolTipText: root.toolTipText
+
+             onClicked: root.clicked()
         }
     }
 
     Loader {
-        active: root.isDismissAction === false
+        active: root.imageSource !== ""
 
         anchors.fill: parent
 
         sourceComponent: CustomButton {
-            id: customButton
+            anchors.fill: parent
+            anchors.topMargin: 10
+            anchors.bottomMargin: 10
 
             text: root.text
-
-            anchors.fill: parent
-
-            imageSource: root.imageSource
-
-            imageSourceHover: root.imageSourceHover
+            toolTipText: root.toolTipText
 
             textColor: root.textColor
             textColorHovered: root.textColorHovered
 
-            textBorderColor: root.textBorderColor
+            imageSource: root.imageSource
+            imageSourceHover: root.imageSourceHover
 
-            bgColor: root.bgColor
-
-            tooltipText: root.tooltipText
+            bgColor: Style.ncBlue
 
             onClicked: root.clicked()
         }

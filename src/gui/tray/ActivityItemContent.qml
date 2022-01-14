@@ -1,6 +1,6 @@
-import QtQml 2.12
-import QtQuick 2.9
-import QtQuick.Controls 2.2
+import QtQml 2.15
+import QtQuick 2.15
+import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.2
 import Style 1.0
 import com.nextcloud.desktopclient 1.0
@@ -12,16 +12,13 @@ RowLayout {
 
     property color activityTextTitleColor: Style.ncTextColor
 
-    signal clicked()
-
     signal shareButtonClicked()
 
-    spacing: 0
+    spacing: 5
 
     Image {
         id: activityIcon
         Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
-        Layout.leftMargin: 20
         Layout.preferredWidth: 32
         Layout.preferredHeight: 32
         verticalAlignment: Qt.AlignCenter
@@ -32,7 +29,6 @@ RowLayout {
 
     Column {
         id: activityTextColumn
-        Layout.leftMargin: 14
         Layout.topMargin: 4
         Layout.bottomMargin: 4
         Layout.fillWidth: true
@@ -70,27 +66,25 @@ RowLayout {
             color: "#808080"
         }
     }
+
     CustomButton {
         id: shareButton
+
+        Layout.preferredWidth: 40
+        Layout.preferredHeight: 40
 
         visible: root.activityData.isShareable
 
         imageSource: "image://svgimage-custom-color/share.svg" + "/" + Style.ncBlue
-
         imageSourceHover: "image://svgimage-custom-color/share.svg" + "/" + Style.ncTextColor
 
-        tooltipText: qsTr("Open share dialog")
+        toolTipText: qsTr("Open share dialog")
+
+        textColor: root.textColor
+        textColorHovered: root.textColorHovered
 
         bgColor: Style.ncBlue
 
-        Layout.minimumWidth: 50
-        Layout.minimumHeight: parent.height
-        Layout.preferredWidth: -1
-
         onClicked: root.shareButtonClicked()
-
-        Accessible.role: Accessible.Button
-        Accessible.name: qsTr("Share %1").arg(root.activityData.displayPath)
-        Accessible.onPressAction: shareButton.clicked()
     }
 }
