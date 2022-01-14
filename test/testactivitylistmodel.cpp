@@ -25,7 +25,7 @@
 #include <QSignalSpy>
 #include <QTest>
 
-constexpr auto STARTING_ID = 90000;
+constexpr auto startingId = 90000;
 
 static QByteArray fake404Response = R"(
 {"ocs":{"meta":{"status":"failure","statuscode":404,"message":"Invalid query, please check the syntax. API specifications are here: http:\/\/www.freedesktop.org\/wiki\/Specifications\/open-collaboration-services.\n"},"data":[]}}
@@ -53,7 +53,7 @@ public:
             this, &TestingALM::activitiesReceived);
 
         QUrlQuery params;
-        params.addQueryItem(QLatin1String("since"), QString::number(STARTING_ID));
+        params.addQueryItem(QLatin1String("since"), QString::number(startingId));
         params.addQueryItem(QLatin1String("limit"), QString::number(50));
         job->addQueryParams(params);
 
@@ -142,7 +142,7 @@ public:
 
         for(int dataIndex = _activityData.size() - 1, iteration = 0;
             dataIndex > 0 && iteration < limit;
-            dataIndex--, iteration ++) {
+            --dataIndex, ++iteration) {
 
             if(_activityData[dataIndex].toObject().value(QStringLiteral("activity_id")).toInt() > sinceId) {
                 data.append(_activityData[dataIndex]);
@@ -162,7 +162,7 @@ private:
     QJsonArray _activityData;
     QVariantMap _metaSuccess;
     quint32 _numItemsToInsert = 30;
-    int _startingId = STARTING_ID;
+    int _startingId = startingId;
 };
 
 FakeRemoteActivityStorage *FakeRemoteActivityStorage::_instance = nullptr;
@@ -334,7 +334,7 @@ private slots:
         model.setAccountState(accountState.data());
         QAbstractItemModelTester modelTester(&model);
 
-        QVERIFY(model.rowCount() == 0);
+        QCOMPARE(model.rowCount(), 0);
 
         model.addNotificationToActivityList(testNotificationActivity);
         QCOMPARE(model.rowCount(), 1);
@@ -349,7 +349,7 @@ private slots:
         model.setAccountState(accountState.data());
         QAbstractItemModelTester modelTester(&model);
 
-        QVERIFY(model.rowCount() == 0);
+        QCOMPARE(model.rowCount(), 0);
 
         model.startFetchJob();
         QSignalSpy activitiesJob(&model, &TestingALM::activityJobStatusCode);
@@ -379,7 +379,7 @@ private slots:
         syncFileItemActivity._message = QStringLiteral("You created xyz.pdf");
         syncFileItemActivity._link = accountState->account()->url();
         syncFileItemActivity._accName = accountState->account()->displayName();
-        syncFileItemActivity._file = QStringLiteral("xyz.pdf");;
+        syncFileItemActivity._file = QStringLiteral("xyz.pdf");
         syncFileItemActivity._fileAction = "";
         model.addSyncFileItemToActivityList(syncFileItemActivity);
         QCOMPARE(model.rowCount(), 53);
