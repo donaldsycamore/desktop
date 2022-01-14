@@ -624,16 +624,8 @@ void ActivityListModel::combineActivityLists()
     }
 
     beginResetModel();
-    _finalList.clear();
+    _finalList = resultList;
     endResetModel();
-
-    qDebug() << "Row count after reset: " << rowCount();
-
-    if (resultList.count() > 0) {
-        beginInsertRows(QModelIndex(), 0, resultList.count() - 1);
-        _finalList = resultList;
-        endInsertRows();
-    }
 }
 
 bool ActivityListModel::canFetchActivities() const
@@ -643,11 +635,8 @@ bool ActivityListModel::canFetchActivities() const
 
 void ActivityListModel::fetchMore(const QModelIndex &)
 {
-    if (canFetchActivities()) {
+    if (canFetchActivities() && !_currentlyFetching) {
         startFetchJob();
-    } else {
-        _doneFetching = true;
-        combineActivityLists();
     }
 }
 
@@ -677,5 +666,6 @@ void ActivityListModel::slotRemoveAccount()
     _totalActivitiesFetched = 0;
     _showMoreActivitiesAvailableEntry = false;
 }
+
 }
 
