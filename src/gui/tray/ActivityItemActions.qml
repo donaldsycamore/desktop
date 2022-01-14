@@ -14,6 +14,8 @@ RowLayout {
 
     property int maxActionButtons: 0
 
+    property bool isFileActivity: activityData.objectType === "files" && activityData.path !== ""
+
     property Flickable flickable: Flickable{}
 
     signal fileActivityButtonClicked(string absolutePath)
@@ -77,6 +79,30 @@ RowLayout {
 
     }
 
+    ActivityActionButton {
+        id: viewActivityButton
+
+        visible: root.isFileActivity
+
+        readonly property bool isDismissAction: true
+
+        Layout.fillHeight: true
+
+        text: qsTr("View activity")
+
+        textColor: "black"
+        textColorHovered: Style.lightHover
+
+        tooltipText: qsTr("View activity")
+
+        Layout.minimumWidth: 80
+        Layout.minimumHeight: parent.height
+
+        Layout.preferredWidth: parent.height
+
+        onClicked: root.fileActivityButtonClicked(root.activityData.absolutePath)
+    }
+
     Rectangle {
         id: moreActionsButton
 
@@ -107,7 +133,7 @@ RowLayout {
             anchors.centerIn: parent
         }
 
-        visible: root.activityData.displayActions && ((root.activityData.path !== "") || (root.activityData.links.length > root.maxActionButtons))
+        visible: root.activityData.displayActions && (root.activityData.links.length > root.maxActionButtons)
 
         ToolTip.visible: hovered
         ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
@@ -137,10 +163,8 @@ RowLayout {
         ActivityItemContextMenu {
             id: moreActionsButtonContextMenuContainer
 
-            visible: moreActionsButtonContextMenu.opened
+            visible: opened
 
-            width: moreActionsButtonContextMenu.width
-            height: moreActionsButtonContextMenu.height
             anchors.right: moreActionsButton.right
             anchors.top: moreActionsButton.top
 

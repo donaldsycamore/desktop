@@ -6,13 +6,12 @@ import Style 1.0
 import com.nextcloud.desktopclient 1.0
 
 MouseArea {
-    id: activityMouseArea
+    id: root
 
     readonly property int maxActionButtons: 2
     property Flickable flickable
 
-
-    height: (model.links.length > 0 || model.path !== "") ? Style.trayWindowHeaderHeight * 2 : Style.trayWindowHeaderHeight
+    height: (model.links.length > 0 || activityActions.isFileActivity) ? Style.trayWindowHeaderHeight * 2 : Style.trayWindowHeaderHeight
 
     signal fileActivityButtonClicked(string absolutePath)
 
@@ -26,7 +25,7 @@ MouseArea {
     }
 
     ColumnLayout {
-        width: activityMouseArea.width
+        width: root.width
         spacing: 0
 
         ActivityItemContent {
@@ -34,7 +33,7 @@ MouseArea {
 
             activityData: model
 
-            onClicked: activityMouseArea.clicked()
+            onClicked: root.clicked()
 
             onShareButtonClicked: Systray.openShareDialog(model.displayPath, model.absolutePath)
 
@@ -44,7 +43,7 @@ MouseArea {
             Accessible.role: Accessible.ListItem
             Accessible.name: path !== "" ? qsTr("Open %1 locally").arg(model.displayPath)
                                          : model.message
-            Accessible.onPressAction: activityMouseArea.clicked()
+            Accessible.onPressAction: root.clicked()
         }
 
         ActivityItemActions {
@@ -56,15 +55,15 @@ MouseArea {
             activityData: model
 
             moreActionsButtonColor: activityHover.color
-            maxActionButtons: activityMouseArea.maxActionButtons
-            flickable: activityMouseArea.flickable
+            maxActionButtons: root.maxActionButtons
+            flickable: root.flickable
 
             onTriggerAction: function(actionIndex) {
                 activityModel.triggerAction(model.index, actionIndex)
             }
 
             onFileActivityButtonClicked: function(absolutePath) {
-                activityMouseArea.fileActivityButtonClicked(absolutePath)
+                root.fileActivityButtonClicked(absolutePath)
             }
         }
     }

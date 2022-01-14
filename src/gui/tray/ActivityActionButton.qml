@@ -4,8 +4,6 @@ import Style 1.0
 
 Item {
     id: root
-    readonly property bool labelVisible: label.visible
-    readonly property bool iconVisible: icon.visible
 
     // label value
     property string text: ""

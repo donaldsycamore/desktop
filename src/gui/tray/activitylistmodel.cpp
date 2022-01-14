@@ -262,7 +262,7 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
     case DisplayActions:
         return _displayActions;
     case ShareableRole:
-        return !data(index, PathRole).toString().isEmpty() && _displayActions && a._fileAction != "file_deleted" && a._status != SyncFileItem::FileIgnored;
+        return !data(index, PathRole).toString().isEmpty() && a._objectType == QStringLiteral("files") && _displayActions && a._fileAction != "file_deleted" && a._status != SyncFileItem::FileIgnored;
     default:
         return QVariant();
     }
