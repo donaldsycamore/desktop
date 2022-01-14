@@ -627,7 +627,9 @@ void ActivityListModel::combineActivityLists()
     _finalList.clear();
     endResetModel();
 
-    if (resultList.count() > 0 && _finalList.isEmpty()) {
+    qDebug() << "Row count after reset: " << rowCount();
+
+    if (resultList.count() > 0) {
         beginInsertRows(QModelIndex(), 0, resultList.count() - 1);
         _finalList = resultList;
         endInsertRows();
