@@ -346,7 +346,6 @@ void ActivityListModel::activitiesReceived(const QJsonDocument &json, int status
         a._icon = json.value(QStringLiteral("icon")).toString();
 
         auto richSubjectData = json.value(QStringLiteral("subject_rich")).toArray();
-        Q_ASSERT(richSubjectData.size() > 1);
 
         if(richSubjectData.size() > 1) {
             a._subjectRich = richSubjectData[0].toString();
