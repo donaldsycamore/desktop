@@ -9,6 +9,8 @@ ScrollView {
     id: controlRoot
     property alias model: activityList.model
 
+    property bool isFileActivityList: false
+
     signal showFileActivity(string displayPath, string absolutePath)
     signal activityItemClicked(int index)
 
@@ -32,6 +34,7 @@ ScrollView {
         clip: true
 
         delegate: ActivityItem {
+            isFileActivityList: controlRoot.isFileActivityList
             width: activityList.contentWidth
             flickable: activityList
             onClicked: activityItemClicked(model.index)

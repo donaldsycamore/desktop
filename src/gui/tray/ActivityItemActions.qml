@@ -14,7 +14,9 @@ RowLayout {
 
     property int maxActionButtons: 0
 
-    property bool isFileActivity: activityData.objectType === "files" && activityData.path !== ""
+    property bool isFileActivityList: false
+
+    property bool isFileActivity: false
 
     property Flickable flickable: Flickable{}
 
@@ -73,7 +75,7 @@ RowLayout {
     ActivityActionButton {
         id: viewActivityButton
 
-        visible: root.isFileActivity
+        visible: root.isFileActivity && !root.isFileActivityList
 
         readonly property bool isDismissAction: true
 

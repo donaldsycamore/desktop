@@ -11,6 +11,8 @@ MouseArea {
     readonly property int maxActionButtons: 2
     property Flickable flickable
 
+    property bool isFileActivityList: false
+
     height: childrenRect.height
 
     signal fileActivityButtonClicked(string absolutePath)
@@ -20,7 +22,7 @@ MouseArea {
 
     Accessible.role: Accessible.ListItem
     Accessible.name: model.path !== "" ? qsTr("Open %1 locally").arg(model.displayPath)
-                                 : model.message
+                                       : model.message
     Accessible.onPressAction: root.clicked()
 
     ToolTip.visible: containsMouse && model.displayLocation !== ""
@@ -45,7 +47,6 @@ MouseArea {
 
             activityData: model
 
-
             onShareButtonClicked: Systray.openShareDialog(model.displayPath, model.absolutePath)
 
             Layout.fillWidth: true
@@ -54,9 +55,15 @@ MouseArea {
         ActivityItemActions {
             id: activityActions
 
+            visible: !root.isFileActivityList && (model.links.length > 0 || activityActions.isFileActivity)
+
             Layout.preferredHeight: Style.trayWindowHeaderHeight
             Layout.fillHeight: true
             Layout.fillWidth: true
+
+            isFileActivityList: root.isFileActivityList
+
+            isFileActivity: model.objectType === "files" && model.path !== ""
 
             activityData: model
 
