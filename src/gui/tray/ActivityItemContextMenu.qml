@@ -9,8 +9,6 @@ Item {
 
     property var activityItemLinks: []
 
-    property bool isFileActivity: false
-
     property alias opened: moreActionsButtonContextMenu.opened
 
     function open() {
@@ -27,8 +25,6 @@ Item {
     height: moreActionsButtonContextMenu.height
 
     signal menuEntryTriggered(int index)
-
-    signal fileActivityButtonClicked()
 
     AutoSizingMenu {
         id: moreActionsButtonContextMenu
@@ -52,15 +48,6 @@ Item {
 
 
             return reducedActionList;
-        }
-
-        Loader {
-            active: root.isFileActivity
-
-            sourceComponent: MenuItem {
-                text: qsTr("View activity")
-                onClicked: root.fileActivityButtonClicked()
-            }
         }
 
         Repeater {

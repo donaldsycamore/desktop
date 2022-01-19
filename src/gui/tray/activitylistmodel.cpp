@@ -70,6 +70,7 @@ QHash<int, QByteArray> ActivityListModel::roleNames() const
     roles[PointInTimeRole] = "dateTime";
     roles[DisplayActions] = "displayActions";
     roles[ShareableRole] = "isShareable";
+    roles[IsCurrentUserFileActivityRole] = "isCurrentUserFileActivity";
     return roles;
 }
 
@@ -169,7 +170,7 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
     case DisplayPathRole:
         return getDisplayPath();
     case PathRole:
-        return QUrl::fromLocalFile(QFileInfo(getFilePath()).path());
+        return QFileInfo(getFilePath()).path();
     case AbsolutePathRole:
         return getFilePath();
     case DisplayLocationRole:
@@ -249,7 +250,7 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         if (a._link.isEmpty()) {
             return "";
         } else {
-            return a._link;
+            return a._link.toString();
         }
     }
     case AccountRole:
@@ -263,6 +264,8 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         return _displayActions;
     case ShareableRole:
         return !data(index, PathRole).toString().isEmpty() && a._objectType == QStringLiteral("files") && _displayActions && a._fileAction != "file_deleted" && a._status != SyncFileItem::FileIgnored;
+    case IsCurrentUserFileActivityRole:
+        return a._isCurrentUserFileActivity;
     default:
         return QVariant();
     }
@@ -329,6 +332,7 @@ void ActivityListModel::activitiesReceived(const QJsonDocument &json, int status
         auto json = activ.toObject();
 
         Activity a;
+        const auto activityUser = json.value(QStringLiteral("user")).toString();
         a._type = Activity::ActivityType;
         a._objectType = json.value(QStringLiteral("object_type")).toString();
         a._accName = ast->account()->displayName();
@@ -340,6 +344,7 @@ void ActivityListModel::activitiesReceived(const QJsonDocument &json, int status
         a._link = QUrl(json.value(QStringLiteral("link")).toString());
         a._dateTime = QDateTime::fromString(json.value(QStringLiteral("datetime")).toString(), Qt::ISODate);
         a._icon = json.value(QStringLiteral("icon")).toString();
+        a._isCurrentUserFileActivity = a._objectType == QStringLiteral("files") && activityUser == ast->account()->davUser();
 
         auto richSubjectData = json.value(QStringLiteral("subject_rich")).toArray();
         Q_ASSERT(richSubjectData.size() > 1);
@@ -571,6 +576,38 @@ void ActivityListModel::triggerAction(int activityIndex, int actionIndex)
     }
 
     emit sendNotificationRequest(activity._accName, action._link, action._verb, activityIndex);
+}
+
+void ActivityListModel::triggerDismiss(int activityIndex)
+{
+    if (activityIndex < 0 || activityIndex >= _finalList.size()) {
+        qCWarning(lcActivity) << "Couldn't trigger action on activity at index" << activityIndex << "/ final list size:" << _finalList.size();
+        return;
+    }
+
+    const auto activity = _finalList[activityIndex];
+
+    const auto links = activity._links;
+
+    const auto foundActivityLinkIt = std::find_if(std::cbegin(links), std::cend(links), [](const ActivityLink &link) {
+        return link._verb == QStringLiteral("DELETE");
+    });
+
+    if (foundActivityLinkIt == std::cend(links)) {
+        qCWarning(lcActivity) << "Couldn't find dismiss action in activity at index" << activityIndex
+                              << " links.size() " << links.size();
+        return;
+    }
+
+    const int actionIndex = std::distance(links.begin(), foundActivityLinkIt);
+
+    if (actionIndex < 0 || actionIndex > links.size()) {
+        qCWarning(lcActivity) << "Couldn't find dismiss action in activity at index" << activityIndex
+                              << " actionIndex found " << actionIndex;
+        return;
+    }
+
+    triggerAction(activityIndex, actionIndex);
 }
 
 AccountState *ActivityListModel::accountState() const

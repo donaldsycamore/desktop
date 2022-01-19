@@ -13,21 +13,37 @@ MouseArea {
 
     property bool isFileActivityList: false
 
-    height: childrenRect.height
+    property bool isChatActivity: model.objectType === "chat" || model.objectType === "room"
+
+    function activityLinksFiltered(activityLinks) {
+        // filter out the "dismiss" action for non-chat activities as per design (we will use a seperate X button for it)
+        if (root.isChatActivity) {
+            return activityLinks;
+        }
+
+        var filtered = activityLinks.filter(function(link) {
+            return link.verb === "DELETE";
+        });
+
+        return filtered;
+    }
+
+    property var linksForActionButtons: root.activityLinksFiltered(model.links)
 
     signal fileActivityButtonClicked(string absolutePath)
 
-    enabled: (model.path !== "" || model.link !== "")
+    enabled: (model.path !== "" || model.link !== "" || model.isCurrentUserFileActivity === true)
     hoverEnabled: true
 
-    Accessible.role: Accessible.ListItem
-    Accessible.name: model.path !== "" ? qsTr("Open %1 locally").arg(model.displayPath)
-                                       : model.message
-    Accessible.onPressAction: root.clicked()
+    height: childrenRect.height
 
-    ToolTip.visible: containsMouse && model.displayLocation !== ""
+    ToolTip.visible: containsMouse && !activityContent.childHovered && model.displayLocation !== ""
     ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
     ToolTip.text: qsTr("In %1").arg(model.displayLocation)
+
+    Accessible.role: Accessible.ListItem
+    Accessible.name: (model.path !== "" && model.displayPath !== "") ? qsTr("Open %1 locally").arg(model.displayPath) : model.message
+    Accessible.onPressAction: root.clicked()
 
     Rectangle {
         id: activityHover
@@ -38,46 +54,46 @@ MouseArea {
     ColumnLayout {
         anchors.left: root.left
         anchors.right: root.right
-        anchors.leftMargin: 10
+        anchors.leftMargin: 15
         anchors.rightMargin: 10
-        spacing: 5
+
+        spacing: 0
 
         ActivityItemContent {
             id: activityContent
 
+            Layout.fillWidth: true
+
+            showDismissButton: model.links.length > 0 && linksForActionButtons.length === 0
+
             activityData: model
 
-            onShareButtonClicked: Systray.openShareDialog(model.displayPath, model.absolutePath)
+            Layout.preferredHeight: Style.trayWindowHeaderHeight
 
-            Layout.fillWidth: true
+            onShareButtonClicked: Systray.openShareDialog(model.displayPath, model.absolutePath)
+            onDismissButtonClicked: activityModel.triggerDismiss(model.index)
         }
 
         ActivityItemActions {
             id: activityActions
 
-            visible: !root.isFileActivityList && (model.links.length > 0 || activityActions.isFileActivity)
+            visible: !root.isFileActivityList && activityActions.activityLinks.length > 0
 
-            Layout.preferredHeight: Style.trayWindowHeaderHeight
-            Layout.fillHeight: true
+            Layout.preferredHeight: Style.trayWindowHeaderHeight * 0.85
             Layout.fillWidth: true
+            Layout.leftMargin: 40
+            Layout.bottomMargin: model.links.length > 1 ? 5 : 0
 
-            isFileActivityList: root.isFileActivityList
-
-            isFileActivity: model.objectType === "files" && model.path !== ""
-
-            activityData: model
+            displayActions: model.displayActions
+            objectType: model.objectType
+            activityLinks: root.linksForActionButtons
 
             moreActionsButtonColor: activityHover.color
             maxActionButtons: root.maxActionButtons
+
             flickable: root.flickable
 
-            onTriggerAction: function(actionIndex) {
-                activityModel.triggerAction(model.index, actionIndex)
-            }
-
-            onFileActivityButtonClicked: function(absolutePath) {
-                root.fileActivityButtonClicked(absolutePath)
-            }
+            onTriggerAction: activityModel.triggerAction(model.index, actionIndex)
         }
     }
 }

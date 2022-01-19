@@ -62,6 +62,7 @@ public:
         SyncFileStatusRole,
         DisplayActions,
         ShareableRole,
+        IsCurrentUserFileActivityRole,
     };
     Q_ENUM(DataRole)
 
@@ -88,6 +89,7 @@ public:
 
     Q_INVOKABLE void triggerDefaultAction(int activityIndex);
     Q_INVOKABLE void triggerAction(int activityIndex, int actionIndex);
+    Q_INVOKABLE void triggerDismiss(int activityIndex);
 
     AccountState *accountState() const;
 

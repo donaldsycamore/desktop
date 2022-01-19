@@ -1,8 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-import Style 1.0
-
 import com.nextcloud.desktopclient 1.0 as NC
 
 ScrollView {
@@ -33,12 +31,19 @@ ScrollView {
 
         clip: true
 
+        spacing: 10
+
         delegate: ActivityItem {
             isFileActivityList: controlRoot.isFileActivityList
             width: activityList.contentWidth
             flickable: activityList
-            onClicked: activityItemClicked(model.index)
-            onFileActivityButtonClicked: showFileActivity(displayPath, absolutePath)
+            onClicked: function() {
+                if (model.isCurrentUserFileActivity) {
+                    showFileActivity(model.displayPath, model.absolutePath)
+                } else {
+                    activityItemClicked(model.index)
+                }
+            }
         }
     }
 }

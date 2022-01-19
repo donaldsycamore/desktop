@@ -9,11 +9,13 @@ Item {
     property string text: ""
     property string toolTipText: ""
 
+    property bool bold: false
+
     property string imageSource: ""
     property string imageSourceHover: ""
 
-    property color textColor: Style.ncTextColor
-    property color textColorHovered: Style.lightHover
+    property color textColor: Style.unifiedSearchResulTitleColor
+    property color textColorHovered: Style.unifiedSearchResulSublineColor
 
     signal clicked()
 
@@ -27,6 +29,9 @@ Item {
              text: root.text
              toolTipText: root.toolTipText
 
+             textColor: root.textColor
+             textColorHovered: root.textColorHovered
+
              onClicked: root.clicked()
         }
     }
@@ -38,14 +43,16 @@ Item {
 
         sourceComponent: CustomButton {
             anchors.fill: parent
-            anchors.topMargin: 10
-            anchors.bottomMargin: 10
+            anchors.topMargin: 5
+            anchors.bottomMargin: 5
 
             text: root.text
             toolTipText: root.toolTipText
 
             textColor: root.textColor
             textColorHovered: root.textColorHovered
+
+            bold: root.bold
 
             imageSource: root.imageSource
             imageSourceHover: root.imageSourceHover

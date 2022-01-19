@@ -94,6 +94,7 @@ void ServerNotificationHandler::slotNotificationsReceived(const QJsonDocument &j
     foreach (auto element, notifies) {
         Activity a;
         auto json = element.toObject();
+
         a._type = Activity::NotificationType;
         a._accName = ai->account()->displayName();
         a._id = json.value("notification_id").toInt();

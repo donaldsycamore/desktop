@@ -4,34 +4,12 @@ import Style 1.0
 
 Item {
     id: root
-    readonly property bool labelVisible: label.visible
-    readonly property bool iconVisible: icon.visible
 
-    // label value
-    property string text: "Mark as read"
-
-    // icon value
-    property string imageSource: ""
-
-    // icon value hovered
-    property string imageSourceHover: ""
-
-    // Tooltip value
+    property string text: ""
     property string toolTipText: ""
 
-    // text color
-    property color textColor: Style.unifiedSearchResulSublineColor
-    property color textColorHovered: "black"
-
-    // text background color
-    property color bgColor: "transparent"
-
-    // icon background color
-    property color iconBgColor: Style.ncBlue
-    property color iconBgColorHovered: Style.lightHover
-
-    // text border color
-    property color textBorderColor: "transparent"
+    property color textColor: Style.unifiedSearchResulTitleColor
+    property color textColorHovered: Style.unifiedSearchResulSublineColor
 
     property alias hovered: mouseArea.containsMouse
 
@@ -39,7 +17,7 @@ Item {
 
     Accessible.role: Accessible.Button
     Accessible.name: root.text !== "" ? root.text : (root.toolTipText !== "" ? root.toolTipText : qsTr("Activity action button"))
-    Accessible.onPressAction: clicked()
+    Accessible.onPressAction: root.clicked()
 
     Label {
         id: label
@@ -47,7 +25,9 @@ Item {
         text: root.text
         font.underline: true
         color: root.hovered ? root.textColorHovered : root.textColor
-        anchors.fill: parent
+        anchors.centerIn: parent
+        width: parent.width
+
         horizontalAlignment: Text.AlignLeft
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight

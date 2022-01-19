@@ -85,6 +85,7 @@ public:
     qint64 _expireAtMsecs = -1;
     QString _accName;
     QString _icon;
+    bool _isCurrentUserFileActivity = false;
 
     // Stores information about the error
     int _status;

@@ -8,19 +8,26 @@ import com.nextcloud.desktopclient 1.0
 RowLayout {
     id: root
 
-    property variant activityData: ({})
+    property variant activityData: {{}}
 
     property color activityTextTitleColor: Style.ncTextColor
 
+    property bool showDismissButton: false
+
+    property bool childHovered: shareButton.hovered || dismissActionButton.hovered
+
+    signal dismissButtonClicked()
     signal shareButtonClicked()
 
-    spacing: 5
+    spacing: 10
 
     Image {
         id: activityIcon
+
         Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
         Layout.preferredWidth: 32
         Layout.preferredHeight: 32
+
         verticalAlignment: Qt.AlignCenter
         source: icon
         sourceSize.height: 64
@@ -29,13 +36,14 @@ RowLayout {
 
     Column {
         id: activityTextColumn
+
         Layout.topMargin: 4
-        Layout.bottomMargin: 4
         Layout.fillWidth: true
-        spacing: 4
         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
-        Text {
+        spacing: 4
+
+        Label {
             id: activityTextTitle
             text: (root.activityData.type === "Activity" || root.activityData.type === "Notification") ? root.activityData.subject : root.activityData.message
             width: parent.width
@@ -44,7 +52,7 @@ RowLayout {
             color: root.activityData.activityTextTitleColor
         }
 
-        Text {
+        Label {
             id: activityTextInfo
             text: (root.activityData.type === "Sync") ? root.activityData.displayPath
                                     : (root.activityData.type === "File") ? root.activityData.subject
@@ -56,7 +64,7 @@ RowLayout {
             font.pixelSize: Style.subLinePixelSize
         }
 
-        Text {
+        Label {
             id: activityTextDateTime
             text: root.activityData.dateTime
             height: (text === "") ? 0 : activityTextTitle.height
@@ -67,11 +75,49 @@ RowLayout {
         }
     }
 
+    Column {
+        id: dismissActionButtonContainer
+
+        Layout.preferredWidth: parent.height * 0.70
+        Layout.preferredHeight: parent.height * 0.70
+
+        Button {
+            id: dismissActionButton
+
+            anchors.fill: parent
+
+            anchors.margins: 10
+
+            ToolTip.visible: hovered
+            ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
+            ToolTip.text: qsTr("Dismiss")
+
+            Accessible.role: Accessible.Button
+            Accessible.name: qsTr("Dismiss")
+            Accessible.onPressAction: dismissActionButton.clicked()
+
+            visible: root.showDismissButton && !shareButton.visible
+
+            background: Rectangle {
+                color: "transparent"
+            }
+
+            contentItem: Image {
+                anchors.fill: parent
+                source: parent.hovered ? "image://svgimage-custom-color/clear.svg" + "/" + "black" : "image://svgimage-custom-color/clear.svg" + "/" + "grey"
+                sourceSize.width: 24
+                sourceSize.height: 24
+            }
+
+            onClicked: root.dismissButtonClicked()
+        }
+    }
+
     CustomButton {
         id: shareButton
 
-        Layout.preferredWidth: 40
-        Layout.preferredHeight: 40
+        Layout.preferredWidth: parent.height * 0.70
+        Layout.preferredHeight: parent.height * 0.70
 
         visible: root.activityData.isShareable
 
@@ -79,9 +125,6 @@ RowLayout {
         imageSourceHover: "image://svgimage-custom-color/share.svg" + "/" + Style.ncTextColor
 
         toolTipText: qsTr("Open share dialog")
-
-        textColor: root.textColor
-        textColorHovered: root.textColorHovered
 
         bgColor: Style.ncBlue
 

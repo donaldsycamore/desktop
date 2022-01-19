@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.2
-import Style 1.0
 
 Button {
     id: root
@@ -11,25 +10,25 @@ Button {
 
     property string toolTipText: ""
 
-    property color textColor: ({})
-    property color textColorHovered: ({})
+    property color textColor
+    property color textColorHovered
 
     property color bgColor: "transparent"
 
-    Accessible.role: Accessible.Button
-    Accessible.name: text !== "" ? text : (toolTipText !== "" ? toolTipText : qsTr("Activity action button"))
-    Accessible.onPressAction: clicked()
-
+    property bool bold: false
 
     background: Rectangle {
-        anchors.fill: parent
         color: root.bgColor
         opacity: parent.hovered ? 1.0 : 0.3
         radius: 25
     }
 
     contentItem: RowLayout {
-        anchors.centerIn: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: root.text === "" ? 5 : 10
+        anchors.rightMargin: root.text === "" ? 5 : 10
+
         Image {
             id: icon
 
@@ -37,11 +36,13 @@ Button {
 
             source: root.hovered ? root.imageSourceHover : root.imageSource
         }
-        Text { 
+
+        Label {
+            Layout.maximumWidth: icon.width > 0 ? parent.width - icon.width - parent.spacing : parent.width
             Layout.fillWidth: icon.status !== Image.Ready
 
             text: root.text
-            font: root.font
+            font.bold: root.bold
 
             visible: root.text !== ""
 
