@@ -21,6 +21,7 @@
 #include "propagateremotedelete.h"
 #include "propagateremotemove.h"
 #include "propagateremotemkdir.h"
+#include "bulkpropagatorjob.h"
 #include "propagatorjobs.h"
 #include "filesystem.h"
 #include "common/utility.h"
@@ -173,7 +174,7 @@ static SyncJournalErrorBlacklistRecord createBlacklistEntry(
  *
  * May adjust the status or item._errorString.
  */
-static void blacklistUpdate(SyncJournalDb *journal, SyncFileItem &item)
+void blacklistUpdate(SyncJournalDb *journal, SyncFileItem &item)
 {
     SyncJournalErrorBlacklistRecord oldEntry = journal->errorBlacklistEntry(item._file);
 
@@ -395,6 +396,8 @@ std::unique_ptr<PropagateUploadFileCommon> OwncloudPropagator::createUploadJob(S
     }
 
     job->setDeleteExisting(deleteExisting);
+
+    removeFromBulkUploadBlackList(item->_file);
 
     return job;
 }
@@ -769,6 +772,10 @@ bool OwncloudPropagator::createConflict(const SyncFileItemPtr &item,
 
     QString renameError;
     auto conflictModTime = FileSystem::getModTime(fn);
+    if (conflictModTime <= 0) {
+        *error = tr("Impossible to get modification time for file in conflict %1").arg(fn);
+        return false;
+    }
     QString conflictUserName;
     if (account()->capabilities().uploadConflictFiles())
         conflictUserName = account()->davDisplayName();
@@ -861,7 +868,7 @@ Result<Vfs::ConvertToPlaceholderResult, QString> OwncloudPropagator::staticUpdat
 
 bool OwncloudPropagator::isDelayedUploadItem(const SyncFileItemPtr &item) const
 {
-    return !_scheduleDelayedTasks && !item->_isEncrypted;
+    return account()->capabilities().bulkUpload() && !_scheduleDelayedTasks && !item->_isEncrypted && _syncOptions._minChunkSize > item->_size && !isInBulkUploadBlackList(item->_file);
 }
 
 void OwncloudPropagator::setScheduleDelayedTasks(bool active)
@@ -872,6 +879,23 @@ void OwncloudPropagator::setScheduleDelayedTasks(bool active)
 void OwncloudPropagator::clearDelayedTasks()
 {
     _delayedTasks.clear();
+}
+
+void OwncloudPropagator::addToBulkUploadBlackList(const QString &file)
+{
+    qCDebug(lcPropagator) << "black list for bulk upload" << file;
+    _bulkUploadBlackList.insert(file);
+}
+
+void OwncloudPropagator::removeFromBulkUploadBlackList(const QString &file)
+{
+    qCDebug(lcPropagator) << "black list for bulk upload" << file;
+    _bulkUploadBlackList.remove(file);
+}
+
+bool OwncloudPropagator::isInBulkUploadBlackList(const QString &file) const
+{
+    return _bulkUploadBlackList.contains(file);
 }
 
 // ================================================================================
@@ -1106,6 +1130,13 @@ void PropagateDirectory::slotSubJobsFinished(SyncFileItem::Status status)
         if (_item->_instruction == CSYNC_INSTRUCTION_NEW && _item->_direction == SyncFileItem::Down) {
             // special case for local MKDIR, set local directory mtime
             // (it's not synced later at all, but can be nice to have it set initially)
+
+            if (_item->_modtime <= 0) {
+                status = _item->_status = SyncFileItem::NormalError;
+                _item->_errorString = tr("Error updating metadata due to invalid modification time");
+                qCWarning(lcDirectory) << "Error writing to the database for file" << _item->_file;
+            }
+
             FileSystem::setModTime(propagator()->fullLocalPath(_item->destination()), _item->_modtime);
         }
 
@@ -1304,13 +1335,4 @@ QString OwncloudPropagator::remotePath() const
     return _remoteFolder;
 }
 
-BulkPropagatorJob::BulkPropagatorJob(OwncloudPropagator *propagator, const QVector<SyncFileItemPtr> &items)
-    : PropagatorCompositeJob(propagator)
-    , _items(items)
-{
-    for(const auto &oneItemJob : _items) {
-        appendTask(oneItemJob);
-    }
-    _items.clear();
-}
 }

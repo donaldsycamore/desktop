@@ -37,6 +37,11 @@ static void setupFavLink_private(const QString &folder)
     }
 }
 
+static void removeFavLink_private(const QString &folder)
+{
+    Q_UNUSED(folder)
+}
+
 // returns the autostart directory the linux way
 // and respects the XDG_CONFIG_HOME env variable
 QString getUserAutostartDir_private()
@@ -101,6 +106,11 @@ void setLaunchOnStartup_private(const QString &appName, const QString &guiName, 
 static inline bool hasDarkSystray_private()
 {
     return true;
+}
+
+QString Utility::getCurrentUserName()
+{
+    return {};
 }
 
 } // namespace OCC

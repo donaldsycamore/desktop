@@ -55,6 +55,7 @@ namespace Utility {
     OCSYNC_EXPORT void usleep(int usec);
     OCSYNC_EXPORT QString formatFingerprint(const QByteArray &, bool colonSeparated = true);
     OCSYNC_EXPORT void setupFavLink(const QString &folder);
+    OCSYNC_EXPORT void removeFavLink(const QString &folder);
     OCSYNC_EXPORT bool writeRandomFile(const QString &fname, int size = -1);
     OCSYNC_EXPORT QString octetsToString(qint64 octets);
     OCSYNC_EXPORT QByteArray userAgentString();
@@ -240,6 +241,11 @@ namespace Utility {
      * @brief Check whether the path is a root of a Windows drive partition ([c:/, d:/, e:/, etc.)
      */
     OCSYNC_EXPORT bool isPathWindowsDrivePartitionRoot(const QString &path);
+
+    /**
+     * @brief Retrieves current logged-in user name from the OS
+     */
+    OCSYNC_EXPORT QString getCurrentUserName();
 
 #ifdef Q_OS_WIN
     OCSYNC_EXPORT bool registryKeyExists(HKEY hRootKey, const QString &subKey);

@@ -20,6 +20,10 @@ MouseArea {
         anchors.fill: parent
         color: (parent.containsMouse ? Style.lightHover : "transparent")
     }
+
+    ToolTip.visible: containsMouse && displayLocation !== ""
+    ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
+    ToolTip.text: qsTr("In %1").arg(displayLocation)
         
     RowLayout {
         id: activityItem
@@ -152,7 +156,7 @@ MouseArea {
                 Layout.alignment: Qt.AlignRight
                 flat: true
                 hoverEnabled: true
-                visible: displayActions && (path !== "")
+                visible: isShareable
                 display: AbstractButton.IconOnly
                 icon.source: "qrc:///client/theme/share.svg"
                 icon.color: "transparent"
@@ -212,7 +216,7 @@ MouseArea {
                     anchors.right: moreActionsButton.right
                     anchors.top: moreActionsButton.top
                     
-                    Menu {
+                    AutoSizingMenu {
                         id: moreActionsButtonContextMenu
                         anchors.centerIn: parent
                         

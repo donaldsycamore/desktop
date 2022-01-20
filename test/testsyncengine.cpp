@@ -8,6 +8,7 @@
 #include <QtTest>
 #include "syncenginetestutils.h"
 #include <syncengine.h>
+#include <propagatorjobs.h>
 
 using namespace OCC;
 
@@ -39,6 +40,18 @@ bool itemDidCompleteSuccessfullyWithExpectedRank(const ItemCompletedSpy &spy, co
         return item->_status == SyncFileItem::Success;
     }
     return false;
+}
+
+int itemSuccessfullyCompletedGetRank(const ItemCompletedSpy &spy, const QString &path)
+{
+    auto itItem = std::find_if(spy.begin(), spy.end(), [&path] (auto currentItem) {
+        auto item = currentItem[0].template value<OCC::SyncFileItemPtr>();
+        return item->destination() == path;
+    });
+    if (itItem != spy.end()) {
+        return itItem - spy.begin();
+    }
+    return -1;
 }
 
 class TestSyncEngine : public QObject
@@ -92,6 +105,8 @@ private slots:
 
     void testDirUploadWithDelayedAlgorithm() {
         FakeFolder fakeFolder{FileInfo::A12_B12_C12_S12()};
+        fakeFolder.syncEngine().account()->setCapabilities({ { "dav", QVariantMap{ {"bulkupload", "1.0"} } } });
+
         ItemCompletedSpy completeSpy(fakeFolder);
         fakeFolder.localModifier().mkdir("Y");
         fakeFolder.localModifier().insert("Y/d0");
@@ -104,12 +119,18 @@ private slots:
         fakeFolder.syncOnce();
         QVERIFY(itemDidCompleteSuccessfullyWithExpectedRank(completeSpy, "Y", 0));
         QVERIFY(itemDidCompleteSuccessfullyWithExpectedRank(completeSpy, "Z", 1));
-        QVERIFY(itemDidCompleteSuccessfullyWithExpectedRank(completeSpy, "Y/d0", 2));
-        QVERIFY(itemDidCompleteSuccessfullyWithExpectedRank(completeSpy, "Z/d0", 3));
-        QVERIFY(itemDidCompleteSuccessfullyWithExpectedRank(completeSpy, "A/a0", 4));
-        QVERIFY(itemDidCompleteSuccessfullyWithExpectedRank(completeSpy, "B/b0", 5));
-        QVERIFY(itemDidCompleteSuccessfullyWithExpectedRank(completeSpy, "r0", 6));
-        QVERIFY(itemDidCompleteSuccessfullyWithExpectedRank(completeSpy, "r1", 7));
+        QVERIFY(itemDidCompleteSuccessfully(completeSpy, "Y/d0"));
+        QVERIFY(itemSuccessfullyCompletedGetRank(completeSpy, "Y/d0") > 1);
+        QVERIFY(itemDidCompleteSuccessfully(completeSpy, "Z/d0"));
+        QVERIFY(itemSuccessfullyCompletedGetRank(completeSpy, "Z/d0") > 1);
+        QVERIFY(itemDidCompleteSuccessfully(completeSpy, "A/a0"));
+        QVERIFY(itemSuccessfullyCompletedGetRank(completeSpy, "A/a0") > 1);
+        QVERIFY(itemDidCompleteSuccessfully(completeSpy, "B/b0"));
+        QVERIFY(itemSuccessfullyCompletedGetRank(completeSpy, "B/b0") > 1);
+        QVERIFY(itemDidCompleteSuccessfully(completeSpy, "r0"));
+        QVERIFY(itemSuccessfullyCompletedGetRank(completeSpy, "r0") > 1);
+        QVERIFY(itemDidCompleteSuccessfully(completeSpy, "r1"));
+        QVERIFY(itemSuccessfullyCompletedGetRank(completeSpy, "r1") > 1);
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
     }
 
@@ -490,7 +511,9 @@ private slots:
         int remoteQuota = 1000;
         int n507 = 0, nPUT = 0;
         QObject parent;
-        fakeFolder.setServerOverride([&](QNetworkAccessManager::Operation op, const QNetworkRequest &request, QIODevice *) -> QNetworkReply * {
+        fakeFolder.setServerOverride([&](QNetworkAccessManager::Operation op, const QNetworkRequest &request, QIODevice *outgoingData) -> QNetworkReply * {
+            Q_UNUSED(outgoingData)
+
             if (op == QNetworkAccessManager::PutOperation) {
                 nPUT++;
                 if (request.rawHeader("OC-Total-Length").toInt() > remoteQuota) {
@@ -529,16 +552,27 @@ private slots:
         QObject parent;
 
         QByteArray checksumValue;
+        QByteArray checksumValueRecalculated;
         QByteArray contentMd5Value;
+        bool isChecksumRecalculateSupported = false;
 
         fakeFolder.setServerOverride([&](QNetworkAccessManager::Operation op, const QNetworkRequest &request, QIODevice *) -> QNetworkReply * {
             if (op == QNetworkAccessManager::GetOperation) {
                 auto reply = new FakeGetReply(fakeFolder.remoteModifier(), op, request, &parent);
                 if (!checksumValue.isNull())
-                    reply->setRawHeader("OC-Checksum", checksumValue);
+                    reply->setRawHeader(OCC::checkSumHeaderC, checksumValue);
                 if (!contentMd5Value.isNull())
-                    reply->setRawHeader("Content-MD5", contentMd5Value);
+                    reply->setRawHeader(OCC::contentMd5HeaderC, contentMd5Value);
                 return reply;
+            } else if (op == QNetworkAccessManager::CustomOperation) {
+                if (request.hasRawHeader(OCC::checksumRecalculateOnServerHeaderC)) {
+                    if (!isChecksumRecalculateSupported) {
+                        return new FakeErrorReply(op, request, &parent, 402);
+                    }
+                    auto reply = new FakeGetReply(fakeFolder.remoteModifier(), op, request, &parent);
+                    reply->setRawHeader(OCC::checkSumHeaderC, checksumValueRecalculated);
+                    return reply;
+                }
             }
             return nullptr;
         });
@@ -553,8 +587,11 @@ private slots:
         fakeFolder.remoteModifier().create("A/a4", 16, 'A');
         QVERIFY(!fakeFolder.syncOnce());
 
+        const QByteArray matchedSha1Checksum(QByteArrayLiteral("SHA1:19b1928d58a2030d08023f3d7054516dbc186f20"));
+        const QByteArray mismatchedSha1Checksum(matchedSha1Checksum.chopped(1));
+
         // Good OC-Checksum
-        checksumValue = "SHA1:19b1928d58a2030d08023f3d7054516dbc186f20"; // printf 'A%.0s' {1..16} | sha1sum -
+        checksumValue = matchedSha1Checksum; // printf 'A%.0s' {1..16} | sha1sum -
         QVERIFY(fakeFolder.syncOnce());
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
         checksumValue = QByteArray();
@@ -588,6 +625,35 @@ private slots:
         checksumValue =  "Unsupported:XXXX SHA1:19b1928d58a2030d08023f3d7054516dbc186f20 Invalid:XxX";
         QVERIFY(fakeFolder.syncOnce()); // The supported SHA1 checksum is valid now, so the file are downloaded
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
+
+        // Begin Test mismatch recalculation---------------------------------------------------------------------------------
+
+        const auto prevServerVersion = fakeFolder.account()->serverVersion();
+        fakeFolder.account()->setServerVersion(QString("%1.0.0").arg(fakeFolder.account()->checksumRecalculateServerVersionMinSupportedMajor()));
+
+        // Mismatched OC-Checksum and X-Recalculate-Hash is not supported -> sync must fail
+        isChecksumRecalculateSupported = false;
+        checksumValue = mismatchedSha1Checksum;
+        checksumValueRecalculated = matchedSha1Checksum;
+        fakeFolder.remoteModifier().create("A/a9", 16, 'A');
+        QVERIFY(!fakeFolder.syncOnce());
+
+        // Mismatched OC-Checksum and X-Recalculate-Hash is supported, but, recalculated checksum is again mismatched -> sync must fail
+        isChecksumRecalculateSupported = true;
+        checksumValue = mismatchedSha1Checksum;
+        checksumValueRecalculated = mismatchedSha1Checksum;
+        QVERIFY(!fakeFolder.syncOnce());
+
+        // Mismatched OC-Checksum and X-Recalculate-Hash is supported, and, recalculated checksum is a match -> sync must succeed
+        isChecksumRecalculateSupported = true;
+        checksumValue = mismatchedSha1Checksum;
+        checksumValueRecalculated = matchedSha1Checksum;
+        QVERIFY(fakeFolder.syncOnce());
+        QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
+        checksumValue = QByteArray();
+
+        fakeFolder.account()->setServerVersion(prevServerVersion);
+        // End Test mismatch recalculation-----------------------------------------------------------------------------------
     }
 
     // Tests the behavior of invalid filename detection
@@ -775,6 +841,95 @@ private slots:
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
 
         QCOMPARE(QFileInfo(fakeFolder.localPath() + "foo").lastModified(), datetime);
+    }
+
+    /**
+     * Checks whether subsequent large uploads are skipped after a 507 error
+     */
+    void testErrorsWithBulkUpload()
+    {
+        FakeFolder fakeFolder{ FileInfo::A12_B12_C12_S12() };
+        fakeFolder.syncEngine().account()->setCapabilities({ { "dav", QVariantMap{ {"bulkupload", "1.0"} } } });
+
+        // Disable parallel uploads
+        SyncOptions syncOptions;
+        syncOptions._parallelNetworkJobs = 0;
+        fakeFolder.syncEngine().setSyncOptions(syncOptions);
+
+        int nPUT = 0;
+        int nPOST = 0;
+        fakeFolder.setServerOverride([&](QNetworkAccessManager::Operation op, const QNetworkRequest &request, QIODevice *outgoingData) -> QNetworkReply * {
+            auto contentType = request.header(QNetworkRequest::ContentTypeHeader).toString();
+            if (op == QNetworkAccessManager::PostOperation) {
+                ++nPOST;
+                if (contentType.startsWith(QStringLiteral("multipart/related; boundary="))) {
+                    auto jsonReplyObject = fakeFolder.forEachReplyPart(outgoingData, contentType, [] (const QMap<QString, QByteArray> &allHeaders) -> QJsonObject {
+                        auto reply = QJsonObject{};
+                        const auto fileName = allHeaders[QStringLiteral("X-File-Path")];
+                        if (fileName.endsWith("A/big2") ||
+                                fileName.endsWith("A/big3") ||
+                                fileName.endsWith("A/big4") ||
+                                fileName.endsWith("A/big5") ||
+                                fileName.endsWith("A/big7") ||
+                                fileName.endsWith("B/big8")) {
+                            reply.insert(QStringLiteral("error"), true);
+                            reply.insert(QStringLiteral("etag"), {});
+                            return reply;
+                        } else {
+                            reply.insert(QStringLiteral("error"), false);
+                            reply.insert(QStringLiteral("etag"), {});
+                        }
+                        return reply;
+                    });
+                    if (jsonReplyObject.size()) {
+                        auto jsonReply = QJsonDocument{};
+                        jsonReply.setObject(jsonReplyObject);
+                        return new FakeJsonErrorReply{op, request, this, 200, jsonReply};
+                    }
+                    return  nullptr;
+                }
+            } else if (op == QNetworkAccessManager::PutOperation) {
+                ++nPUT;
+                const auto fileName = getFilePathFromUrl(request.url());
+                if (fileName.endsWith("A/big2") ||
+                        fileName.endsWith("A/big3") ||
+                        fileName.endsWith("A/big4") ||
+                        fileName.endsWith("A/big5") ||
+                        fileName.endsWith("A/big7") ||
+                        fileName.endsWith("B/big8")) {
+                    return new FakeErrorReply(op, request, this, 412);
+                }
+                return  nullptr;
+            }
+            return  nullptr;
+        });
+
+        fakeFolder.localModifier().insert("A/big", 1);
+        QVERIFY(fakeFolder.syncOnce());
+        QCOMPARE(nPUT, 0);
+        QCOMPARE(nPOST, 1);
+        nPUT = 0;
+        nPOST = 0;
+
+        fakeFolder.localModifier().insert("A/big1", 1); // ok
+        fakeFolder.localModifier().insert("A/big2", 1); // ko
+        fakeFolder.localModifier().insert("A/big3", 1); // ko
+        fakeFolder.localModifier().insert("A/big4", 1); // ko
+        fakeFolder.localModifier().insert("A/big5", 1); // ko
+        fakeFolder.localModifier().insert("A/big6", 1); // ok
+        fakeFolder.localModifier().insert("A/big7", 1); // ko
+        fakeFolder.localModifier().insert("A/big8", 1); // ok
+        fakeFolder.localModifier().insert("B/big8", 1); // ko
+
+        QVERIFY(!fakeFolder.syncOnce());
+        QCOMPARE(nPUT, 0);
+        QCOMPARE(nPOST, 1);
+        nPUT = 0;
+        nPOST = 0;
+
+        QVERIFY(!fakeFolder.syncOnce());
+        QCOMPARE(nPUT, 6);
+        QCOMPARE(nPOST, 0);
     }
 };
 

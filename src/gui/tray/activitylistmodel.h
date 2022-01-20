@@ -55,11 +55,13 @@ public:
         DisplayPathRole,
         PathRole,
         AbsolutePathRole,
+        DisplayLocationRole, // Provides the display path to a file's parent folder, relative to Nextcloud root
         LinkRole,
         PointInTimeRole,
         AccountConnectedRole,
         SyncFileStatusRole,
         DisplayActions,
+        ShareableRole,
     };
     Q_ENUM(DataRole)
 

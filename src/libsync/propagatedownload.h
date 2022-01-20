@@ -17,6 +17,7 @@
 #include "owncloudpropagator.h"
 #include "networkjobs.h"
 #include "clientsideencryption.h"
+#include <common/checksums.h>
 
 #include <QBuffer>
 #include <QFile>
@@ -96,7 +97,7 @@ public:
     void giveBandwidthQuota(qint64 q);
     qint64 currentDownloadPosition();
 
-    QString errorString() const;
+    QString errorString() const override;
     void setErrorString(const QString &s) { _errorString = s; }
 
     SyncFileItem::Status errorStatus() { return _errorStatus; }
@@ -235,7 +236,10 @@ private slots:
 
     void abort(PropagatorJob::AbortType abortType) override;
     void slotDownloadProgress(qint64, qint64);
-    void slotChecksumFail(const QString &errMsg);
+    void slotChecksumFail(const QString &errMsg, const QByteArray &calculatedChecksumType,
+        const QByteArray &calculatedChecksum, const ValidateChecksumHeader::FailureReason reason);
+    void processChecksumRecalculate(const QNetworkReply *reply, const QByteArray &originalChecksumHeader, const QString &errorMessage);
+    void checksumValidateFailedAbortDownload(const QString &errMsg);
 
 private:
     void startAfterIsEncryptedIsChecked();

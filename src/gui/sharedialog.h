@@ -26,6 +26,7 @@
 #include <QWidget>
 
 class QProgressIndicator;
+class QVBoxLayout;
 
 namespace OCC {
 
@@ -66,8 +67,7 @@ private slots:
     void slotCreateLinkShare();
     void slotCreatePasswordForLinkShare(const QString &password);
     void slotCreatePasswordForLinkShareProcessed();
-    void slotLinkShareRequiresPassword();
-    void slotAdjustScrollWidgetSize();
+    void slotLinkShareRequiresPassword(const QString &message);
 
 signals:
     void toggleShareLinkAnimation(bool start);
@@ -78,8 +78,10 @@ protected:
 
 private:
     void showSharingUi();
+    void initShareManager();
     ShareLinkWidget *addLinkShareWidget(const QSharedPointer<LinkShare> &linkShare);
     void initLinkShareWidget();
+    void adjustScrollWidgetSize();
 
     Ui::ShareDialog *_ui;
 
@@ -96,6 +98,9 @@ private:
     ShareLinkWidget* _emptyShareLinkWidget = nullptr;
     ShareUserGroupWidget *_userGroupWidget = nullptr;
     QProgressIndicator *_progressIndicator = nullptr;
+    
+    QWidget *_scrollAreaViewPort = nullptr;
+    QVBoxLayout *_scrollAreaLayout = nullptr;
 };
 
 } // namespace OCC

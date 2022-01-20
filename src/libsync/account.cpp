@@ -47,6 +47,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QLoggingCategory>
+#include <QHttpMultiPart>
 
 #include <qsslconfiguration.h>
 #include <qt5keychain/keychain.h>
@@ -56,6 +57,8 @@ using namespace QKeychain;
 
 namespace {
 constexpr int pushNotificationsReconnectInterval = 1000 * 60 * 2;
+constexpr int usernamePrefillServerVersionMinSupportedMajor = 24;
+constexpr int checksumRecalculateRequestServerVersionMinSupportedMajor = 24;
 }
 
 namespace OCC {
@@ -360,6 +363,18 @@ QNetworkReply *Account::sendRawRequest(const QByteArray &verb, const QUrl &url, 
     return _am->sendCustomRequest(req, verb, data);
 }
 
+QNetworkReply *Account::sendRawRequest(const QByteArray &verb, const QUrl &url, QNetworkRequest req, QHttpMultiPart *data)
+{
+    req.setUrl(url);
+    req.setSslConfiguration(this->getOrCreateSslConfig());
+    if (verb == "PUT") {
+        return _am->put(req, data);
+    } else if (verb == "POST") {
+        return _am->post(req, data);
+    }
+    return _am->sendCustomRequest(req, verb, data);
+}
+
 SimpleNetworkJob *Account::sendRequest(const QByteArray &verb, const QUrl &url, QNetworkRequest req, QIODevice *data)
 {
     auto job = new SimpleNetworkJob(sharedFromThis());
@@ -614,6 +629,21 @@ bool Account::serverVersionUnsupported() const
     }
     return serverVersionInt() < makeServerVersion(NEXTCLOUD_SERVER_VERSION_MIN_SUPPORTED_MAJOR,
                NEXTCLOUD_SERVER_VERSION_MIN_SUPPORTED_MINOR, NEXTCLOUD_SERVER_VERSION_MIN_SUPPORTED_PATCH);
+}
+
+bool Account::isUsernamePrefillSupported() const
+{
+    return serverVersionInt() >= makeServerVersion(usernamePrefillServerVersionMinSupportedMajor, 0, 0);
+}
+
+bool Account::isChecksumRecalculateRequestSupported() const
+{
+    return serverVersionInt() >= makeServerVersion(checksumRecalculateRequestServerVersionMinSupportedMajor, 0, 0);
+}
+
+int Account::checksumRecalculateServerVersionMinSupportedMajor() const
+{
+    return checksumRecalculateRequestServerVersionMinSupportedMajor;
 }
 
 void Account::setServerVersion(const QString &version)

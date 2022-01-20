@@ -389,7 +389,13 @@ void ProcessDirectoryJob::processFile(PathTuple path,
     item->_originalFile = path._original;
     item->_previousSize = dbEntry._fileSize;
     item->_previousModtime = dbEntry._modtime;
-    item->_renameTarget = localEntry.renameName;
+    if (!localEntry.renameName.isEmpty()) {
+        if (_dirItem) {
+            item->_renameTarget = _dirItem->_file + "/" + localEntry.renameName;
+        } else {
+            item->_renameTarget = localEntry.renameName;
+        }
+    }
 
     if (dbEntry._modtime == localEntry.modtime && dbEntry._type == ItemTypeVirtualFile && localEntry.type == ItemTypeFile) {
         item->_type = ItemTypeFile;
@@ -524,6 +530,19 @@ void ProcessDirectoryJob::processFileAnalyzeRemoteInfo(
             item->_instruction = CSYNC_INSTRUCTION_SYNC;
             item->_type = ItemTypeVirtualFileDownload;
         } else if (dbEntry._etag != serverEntry.etag) {
+            item->_direction = SyncFileItem::Down;
+            item->_modtime = serverEntry.modtime;
+            item->_size = sizeOnServer;
+            if (serverEntry.isDirectory) {
+                ENFORCE(dbEntry.isDirectory());
+                item->_instruction = CSYNC_INSTRUCTION_UPDATE_METADATA;
+            } else if (!localEntry.isValid() && _queryLocal != ParentNotChanged) {
+                // Deleted locally, changed on server
+                item->_instruction = CSYNC_INSTRUCTION_NEW;
+            } else {
+                item->_instruction = CSYNC_INSTRUCTION_SYNC;
+            }
+        } else if (dbEntry._modtime <= 0 && serverEntry.modtime > 0) {
             item->_direction = SyncFileItem::Down;
             item->_modtime = serverEntry.modtime;
             item->_size = sizeOnServer;
@@ -934,6 +953,14 @@ void ProcessDirectoryJob::processFileAnalyzeLocalInfo(
             item->_modtime = localEntry.modtime;
             item->_type = localEntry.isDirectory ? ItemTypeDirectory : ItemTypeFile;
             _childModified = true;
+        } else if (dbEntry._modtime > 0 && localEntry.modtime <= 0) {
+            item->_instruction = CSYNC_INSTRUCTION_SYNC;
+            item->_direction = SyncFileItem::Down;
+            item->_size = localEntry.size > 0 ? localEntry.size : dbEntry._fileSize;
+            item->_modtime = dbEntry._modtime;
+            item->_previousModtime = dbEntry._modtime;
+            item->_type = localEntry.isDirectory ? ItemTypeDirectory : ItemTypeFile;
+            _childModified = true;
         } else {
             // Local file was changed
             item->_instruction = CSYNC_INSTRUCTION_SYNC;
@@ -1000,6 +1027,11 @@ void ProcessDirectoryJob::processFileAnalyzeLocalInfo(
             return;
         }
 
+        if (localEntry.isDirectory && _discoveryData->_syncOptions._vfs->mode() != Vfs::WindowsCfApi) {
+            // for VFS folders on Windows only
+            return;
+        }
+
         Q_ASSERT(item->_instruction == CSYNC_INSTRUCTION_NEW);
         if (item->_instruction != CSYNC_INSTRUCTION_NEW) {
             qCWarning(lcDisco) << "Trying to wipe a virtual item" << path._local << " with item->_instruction" << item->_instruction;
@@ -1028,9 +1060,8 @@ void ProcessDirectoryJob::processFileAnalyzeLocalInfo(
 
         if (!isFilePlaceHolder && !isOnlineOnlyFolder) {
             if (localEntry.isDirectory && folderPlaceHolderAvailability.isValid() && !isOnlineOnlyFolder) {
-                // a VFS folder but is not online0only (has some files hydrated)
+                // a VFS folder but is not online-only (has some files hydrated)
                 qCInfo(lcDisco) << "Virtual directory without db entry for" << path._local << "but it contains hydrated file(s), so let's keep it and reupload.";
-                emit _discoveryData->addErrorToGui(SyncFileItem::SoftError, tr("Conflict when uploading some files to a folder. Those, conflicted, are going to get cleared!"), path._local);
                 return;
             }
             qCWarning(lcDisco) << "Virtual file without db entry for" << path._local
@@ -1043,6 +1074,12 @@ void ProcessDirectoryJob::processFileAnalyzeLocalInfo(
         if (isOnlineOnlyFolder) {
             // if we're wiping a folder, we will only get this function called once and will wipe a folder along with it's files and also display one error in GUI
             qCInfo(lcDisco) << "Wiping virtual folder without db entry for" << path._local;
+            if (isfolderPlaceHolderAvailabilityOnlineOnly && folderPlaceHolderAvailability.isValid()) {
+                qCInfo(lcDisco) << "*folderPlaceHolderAvailability:" << *folderPlaceHolderAvailability;
+            }
+            if (isFolderPinStateOnlineOnly && folderPinState.isValid()) {
+                qCInfo(lcDisco) << "*folderPinState:" << *folderPinState;
+            }
             emit _discoveryData->addErrorToGui(SyncFileItem::SoftError, tr("Conflict when uploading a folder. It's going to get cleared!"), path._local);
         } else {
             qCInfo(lcDisco) << "Wiping virtual file without db entry for" << path._local;

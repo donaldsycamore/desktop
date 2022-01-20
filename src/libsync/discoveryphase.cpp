@@ -185,7 +185,9 @@ QPair<bool, QByteArray> DiscoveryPhase::findAndCancelDeletedJob(const QString &o
                 qCWarning(lcDiscovery) << "instruction" << instruction;
                 qCWarning(lcDiscovery) << "(*it)->_type" << (*it)->_type;
                 qCWarning(lcDiscovery) << "(*it)->_isRestoration " << (*it)->_isRestoration;
-                ENFORCE(false);
+                Q_ASSERT(false);
+                addErrorToGui(SyncFileItem::Status::FatalError, tr("Error while canceling deletion of a file"), originalPath);
+                emit fatalError(tr("Error while canceling deletion of %1").arg(originalPath));
             }
             (*it)->_instruction = CSYNC_INSTRUCTION_NONE;
             result = true;

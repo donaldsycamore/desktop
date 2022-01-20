@@ -154,6 +154,9 @@ public:
     QNetworkReply *sendRawRequest(const QByteArray &verb,
         const QUrl &url, QNetworkRequest req, const QByteArray &data);
 
+    QNetworkReply *sendRawRequest(const QByteArray &verb,
+        const QUrl &url, QNetworkRequest req, QHttpMultiPart *data);
+
     /** Create and start network job for a simple one-off request.
      *
      * More complicated requests typically create their own job types.
@@ -226,6 +229,12 @@ public:
      * This function returns true if the server is beyond the weak limit.
      */
     bool serverVersionUnsupported() const;
+
+    bool isUsernamePrefillSupported() const;
+
+    bool isChecksumRecalculateRequestSupported() const;
+
+    int checksumRecalculateServerVersionMinSupportedMajor() const;
 
     /** True when the server connection is using HTTP2  */
     bool isHttp2Supported() { return _http2Supported; }
