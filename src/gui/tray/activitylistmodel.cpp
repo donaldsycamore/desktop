@@ -70,7 +70,7 @@ QHash<int, QByteArray> ActivityListModel::roleNames() const
     roles[PointInTimeRole] = "dateTime";
     roles[DisplayActions] = "displayActions";
     roles[ShareableRole] = "isShareable";
-    roles[PreviewsRole] = "previews";
+    roles[ThumbnailRole] = "thumbnail";
     return roles;
 }
 
@@ -267,24 +267,21 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         return _displayActions;
     case ShareableRole:
         return !data(index, PathRole).toString().isEmpty() && _displayActions && a._fileAction != "file_deleted" && a._status != SyncFileItem::FileIgnored;
-    case PreviewsRole: {
+    case ThumbnailRole: {
         if(a._previews.count() <= 0) {
             return {};
         }
 
-        QVariantList variantedPreviews;
-        for(const auto &preview : a._previews) {
-            variantedPreviews.append(QVariantMap {
-                {QStringLiteral("source"), preview._source},
-                {QStringLiteral("link"), preview._link},
-                {QStringLiteral("mimeType"), preview._mimeType},
-                {QStringLiteral("fileId"), preview._fileId},
-                {QStringLiteral("view"), preview._view},
-                {QStringLiteral("isMimeTypeIcon"), preview._isMimeTypeIcon},
-                {QStringLiteral("filename"), preview._filename},
-            });
-        }
-        return variantedPreviews;
+        const auto preview = a._previews[0];
+        return(QVariantMap {
+            {QStringLiteral("source"), QStringLiteral("image://activity-item-icon/").append(preview._source)},
+               {QStringLiteral("link"), preview._link},
+               {QStringLiteral("mimeType"), preview._mimeType},
+               {QStringLiteral("fileId"), preview._fileId},
+               {QStringLiteral("view"), preview._view},
+               {QStringLiteral("isMimeTypeIcon"), preview._isMimeTypeIcon},
+               {QStringLiteral("filename"), preview._filename},
+        });
     }
     default:
         return QVariant();

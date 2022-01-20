@@ -62,7 +62,7 @@ public:
         SyncFileStatusRole,
         DisplayActions,
         ShareableRole,
-        PreviewsRole,
+        ThumbnailRole
     };
     Q_ENUM(DataRole)
 
