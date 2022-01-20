@@ -41,6 +41,32 @@ public:
     bool _primary;
 };
 
+/**
+ * @brief The PreviewData class describes the data about a file's preview.
+ */
+
+class PreviewData
+{
+    Q_GADGET
+
+    Q_PROPERTY(QString source MEMBER _source)
+    Q_PROPERTY(QString link MEMBER _link)
+    Q_PROPERTY(QString mimeType MEMBER _mimeType)
+    Q_PROPERTY(int fileId MEMBER _fileId)
+    Q_PROPERTY(QString view MEMBER _view)
+    Q_PROPERTY(bool isMimeTypeIcon MEMBER _isMimeTypeIcon)
+    Q_PROPERTY(QString filename MEMBER _filename)
+
+public:
+    QString _source;
+    QString _link;
+    QString _mimeType;
+    int _fileId;
+    QString _view;
+    bool _isMimeTypeIcon;
+    QString _filename;
+};
+
 /* ==================================================================== */
 /**
  * @brief Activity Structure
@@ -85,6 +111,7 @@ public:
     qint64 _expireAtMsecs = -1;
     QString _accName;
     QString _icon;
+    QVector<PreviewData> _previews;
 
     // Stores information about the error
     int _status;
@@ -115,5 +142,6 @@ using ActivityList = QList<Activity>;
 
 Q_DECLARE_METATYPE(OCC::Activity::Type)
 Q_DECLARE_METATYPE(OCC::ActivityLink)
+Q_DECLARE_METATYPE(OCC::PreviewData)
 
 #endif // ACTIVITYDATA_H
