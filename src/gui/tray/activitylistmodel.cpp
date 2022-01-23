@@ -70,6 +70,8 @@ QHash<int, QByteArray> ActivityListModel::roleNames() const
     roles[PointInTimeRole] = "dateTime";
     roles[DisplayActions] = "displayActions";
     roles[ShareableRole] = "isShareable";
+    roles[TalkConversationTokenRole] = "conversationToken";
+    roles[TalkMessageIdRole] = "messageId";
     return roles;
 }
 
@@ -263,6 +265,10 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         return _displayActions;
     case ShareableRole:
         return !data(index, PathRole).toString().isEmpty() && _displayActions && a._fileAction != "file_deleted" && a._status != SyncFileItem::FileIgnored;
+    case TalkConversationTokenRole:
+        return a._talkNotification.conversationToken;
+    case TalkMessageIdRole:
+        return a._talkNotification.messageId;
     default:
         return QVariant();
     }
@@ -569,7 +575,7 @@ void ActivityListModel::triggerAction(int activityIndex, int actionIndex)
         Utility::openBrowser(QUrl(action._link));
         return;
     }
-
+    
     emit sendNotificationRequest(activity._accName, action._link, action._verb, activityIndex);
 }
 

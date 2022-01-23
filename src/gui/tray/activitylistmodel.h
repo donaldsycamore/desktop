@@ -62,6 +62,8 @@ public:
         SyncFileStatusRole,
         DisplayActions,
         ShareableRole,
+        TalkConversationTokenRole,
+        TalkMessageIdRole
     };
     Q_ENUM(DataRole)
 
