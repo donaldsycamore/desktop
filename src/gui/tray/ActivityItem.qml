@@ -84,6 +84,10 @@ MouseArea {
                 font.pixelSize: Style.subLinePixelSize
             }
             
+            TalkReply {
+                id: talkReply
+            }
+            
             Text {
                 id: activityTextDateTime
                 text: dateTime
