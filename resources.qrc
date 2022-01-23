@@ -23,5 +23,6 @@
         <file>src/gui/tray/UnifiedSearchResultListItem.qml</file>
         <file>src/gui/tray/UnifiedSearchResultNothingFound.qml</file>
         <file>src/gui/tray/UnifiedSearchResultSectionItem.qml</file>
+        <file>src/gui/tray/TalkReply.qml</file>
     </qresource>
 </RCC>
