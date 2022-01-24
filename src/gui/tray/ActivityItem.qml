@@ -31,16 +31,16 @@ MouseArea {
         readonly property variant links: model.links
         
         readonly property int itemIndex: model.index
-        
+
         width: activityMouseArea.width
-        height: Style.trayWindowHeaderHeight
-        spacing: 0
+        height: activityMouseArea.height
+        spacing: 2
         
         Accessible.role: Accessible.ListItem
         Accessible.name: path !== "" ? qsTr("Open %1 locally").arg(displayPath)
                                      : message
-        Accessible.onPressAction: activityMouseArea.clicked()   
-        
+        Accessible.onPressAction: activityMouseArea.clicked
+               
         Image {
             id: activityIcon
             Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
@@ -56,22 +56,23 @@ MouseArea {
         
         Column {
             id: activityTextColumn
-            Layout.leftMargin: 14
-            Layout.topMargin: 4
-            Layout.bottomMargin: 4
+            Layout.leftMargin: 10
+            Layout.topMargin: 2
+            Layout.bottomMargin: 2
             Layout.fillWidth: true
-            spacing: 4
-            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+            spacing: 2
+            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter   
             
             Text {
                 id: activityTextTitle
                 text: (type === "Activity" || type === "Notification") ? subject : message
+                height: Style.topLinePixelSize
                 width: parent.width
                 elide: Text.ElideRight
                 font.pixelSize: Style.topLinePixelSize
                 color: activityTextTitleColor
             }
-            
+
             Text {
                 id: activityTextInfo
                 text: (type === "Sync") ? displayPath
@@ -79,9 +80,9 @@ MouseArea {
                                                             : (type === "Notification") ? message
                                                                                         : ""
                 height: (text === "") ? 0 : activityTextTitle.height
-                width: parent.width
                 elide: Text.ElideRight
                 font.pixelSize: Style.subLinePixelSize
+                width: parent.width
             }
             
             TalkReply {
@@ -102,8 +103,8 @@ MouseArea {
         RowLayout {
             id: activityActionsLayout
             spacing: 0
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            Layout.minimumWidth: 28
+            Layout.alignment: Qt.AlignLeft | Qt.AlignBottom
+            Layout.minimumWidth: 20
             Layout.fillWidth: true
             
             function actionButtonIcon(actionIndex) {
@@ -126,7 +127,7 @@ MouseArea {
                     readonly property int actionIndex: model.index
                     readonly property bool primary: model.index === 0 && String(activityItem.links[actionIndex].verb) !== "DELETE"
                     
-                    Layout.fillHeight: true                    
+                    Layout.fillHeight: false                    
                     
                     text: !primary ? "" : activityItem.links[actionIndex].label
                     
@@ -142,10 +143,10 @@ MouseArea {
                     
                     tooltipText: activityItem.links[actionIndex].label
                     
-                    Layout.minimumWidth: primary ? 80 : -1
-                    Layout.minimumHeight: parent.height
+                    Layout.minimumWidth: primary? 80 : 30
+                    Layout.minimumHeight: 60
                     
-                    Layout.preferredWidth: primary ? -1 : parent.height
+                    Layout.preferredWidth: primary? 80 : 30
                     
                     onClicked: activityModel.triggerAction(activityItem.itemIndex, actionIndex)
                 }
@@ -155,7 +156,7 @@ MouseArea {
             Button {
                 id: shareButton
                 
-                Layout.preferredWidth:  parent.height
+                Layout.preferredWidth: parent.height
                 Layout.fillHeight: true
                 Layout.alignment: Qt.AlignRight
                 flat: true

@@ -33,7 +33,7 @@ ScrollView {
 
         delegate: ActivityItem {
             width: activityList.contentWidth
-            height: Style.trayWindowHeaderHeight
+            height: Style.trayWindowNotificationHeight
             flickable: activityList
             onClicked: activityItemClicked(model.index)
             onFileActivityButtonClicked: showFileActivity(displayPath, absolutePath)
