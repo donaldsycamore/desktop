@@ -34,24 +34,25 @@ namespace OCC {
         return Identifier(_id, _accName);
     }
 
-    OCC::Activity Activity::fromActivityJson(QJsonObject json)
+    OCC::Activity Activity::fromActivityJson(const QJsonObject json, const QString accName)
     {
-        Activity a;
-        a._type = Activity::ActivityType;
-        a._objectType = json.value(QStringLiteral("object_type")).toString();
-        a._id = json.value(QStringLiteral("activity_id")).toInt();
-        a._fileAction = json.value(QStringLiteral("type")).toString();
-        a._subject = json.value(QStringLiteral("subject")).toString();
-        a._message = json.value(QStringLiteral("message")).toString();
-        a._file = json.value(QStringLiteral("object_name")).toString();
-        a._link = QUrl(json.value(QStringLiteral("link")).toString());
-        a._dateTime = QDateTime::fromString(json.value(QStringLiteral("datetime")).toString(), Qt::ISODate);
-        a._icon = json.value(QStringLiteral("icon")).toString();
+        Activity activity;
+        activity._type = Activity::ActivityType;
+        activity._objectType = json.value(QStringLiteral("object_type")).toString();
+        activity._id = json.value(QStringLiteral("activity_id")).toInt();
+        activity._fileAction = json.value(QStringLiteral("type")).toString();
+        activity._accName = accName;
+        activity._subject = json.value(QStringLiteral("subject")).toString();
+        activity._message = json.value(QStringLiteral("message")).toString();
+        activity._file = json.value(QStringLiteral("object_name")).toString();
+        activity._link = QUrl(json.value(QStringLiteral("link")).toString());
+        activity._dateTime = QDateTime::fromString(json.value(QStringLiteral("datetime")).toString(), Qt::ISODate);
+        activity._icon = json.value(QStringLiteral("icon")).toString();
 
         auto richSubjectData = json.value(QStringLiteral("subject_rich")).toArray();
 
         if(richSubjectData.size() > 1) {
-            a._subjectRich = richSubjectData[0].toString();
+            activity._subjectRich = richSubjectData[0].toString();
             auto parameters = richSubjectData[1].toObject();
             const QRegularExpression subjectRichParameterRe(QStringLiteral("({[a-zA-Z0-9]*})"));
             const QRegularExpression subjectRichParameterBracesRe(QStringLiteral("[{}]"));
@@ -59,7 +60,7 @@ namespace OCC {
             for (auto i = parameters.begin(); i != parameters.end(); ++i) {
                 const auto parameterJsonObject = i.value().toObject();
 
-                a._subjectRichParameters[i.key()] = Activity::RichSubjectParameter  {
+                activity._subjectRichParameters[i.key()] = Activity::RichSubjectParameter  {
                     parameterJsonObject.value(QStringLiteral("type")).toString(),
                     parameterJsonObject.value(QStringLiteral("id")).toString(),
                     parameterJsonObject.value(QStringLiteral("name")).toString(),
@@ -68,7 +69,7 @@ namespace OCC {
                 };
             }
 
-            auto displayString = a._subjectRich;
+            auto displayString = activity._subjectRich;
             auto i = subjectRichParameterRe.globalMatch(displayString);
 
             while (i.hasNext()) {
@@ -76,11 +77,11 @@ namespace OCC {
                 auto word = match.captured(1);
                 word.remove(subjectRichParameterBracesRe);
 
-                Q_ASSERT(a._subjectRichParameters.contains(word));
-                displayString = displayString.replace(match.captured(1), a._subjectRichParameters[word].name);
+                Q_ASSERT(activity._subjectRichParameters.contains(word));
+                displayString = displayString.replace(match.captured(1), activity._subjectRichParameters[word].name);
             }
 
-            a._subjectDisplay = displayString;
+            activity._subjectDisplay = displayString;
         }
 
         const auto previewsData = json.value(QStringLiteral("previews")).toArray();
@@ -97,19 +98,73 @@ namespace OCC {
             data._isMimeTypeIcon = jsonPreviewData.value(QStringLiteral("isMimeTypeIcon")).toBool();
             data._filename = jsonPreviewData.value(QStringLiteral("filename")).toString();
 
-            a._previews.append(data);
+            activity._previews.append(data);
         }
 
         if(!previewsData.isEmpty()) {
-            if(a._icon.contains(QStringLiteral("add-color.svg"))) {
-                a._icon = "qrc:///client/theme/colored/add-bordered.svg";
-            } else if(a._icon.contains(QStringLiteral("delete-color.svg"))) {
-                a._icon = "qrc:///client/theme/colored/delete-bordered.svg";
-            } else if(a._icon.contains(QStringLiteral("change.svg"))) {
-                a._icon = "qrc:///client/theme/colored/change-bordered.svg";
+            if(activity._icon.contains(QStringLiteral("add-color.svg"))) {
+                activity._icon = "qrc:///client/theme/colored/add-bordered.svg";
+            } else if(activity._icon.contains(QStringLiteral("delete-color.svg"))) {
+                activity._icon = "qrc:///client/theme/colored/delete-bordered.svg";
+            } else if(activity._icon.contains(QStringLiteral("change.svg"))) {
+                activity._icon = "qrc:///client/theme/colored/change-bordered.svg";
             }
         }
 
-        return a;
+        return activity;
+    }
+
+    OCC::Activity Activity::fromSyncFileItemPtr(const SyncFileItemPtr item, const AccountPtr account, const Folder *folder)
+    {
+        Activity activity;
+        activity._type = Activity::SyncFileItemType; //client activity
+        activity._status = item->_status;
+        activity._dateTime = QDateTime::currentDateTime();
+        activity._message = item->_originalFile;
+        activity._link = account->url();
+        activity._accName = account->displayName();
+        activity._file = item->_file;
+        activity._folder = folder->alias();
+        activity._fileAction = "";
+
+        const auto fileName = QFileInfo(item->_originalFile).fileName();
+
+        if (item->_instruction == CSYNC_INSTRUCTION_REMOVE) {
+            activity._fileAction = "file_deleted";
+        } else if (item->_instruction == CSYNC_INSTRUCTION_NEW) {
+            activity._fileAction = "file_created";
+        } else if (item->_instruction == CSYNC_INSTRUCTION_RENAME) {
+            activity._fileAction = "file_renamed";
+        } else {
+            activity._fileAction = "file_changed";
+        }
+
+        if (item->_status == SyncFileItem::NoStatus || item->_status == SyncFileItem::Success) {
+
+            if (item->_direction != SyncFileItem::Up) {
+                activity._message = QObject::tr("Synced %1").arg(fileName);
+            } else if (activity._fileAction == "file_renamed") {
+                activity._message = QObject::tr("You renamed %1").arg(fileName);
+            } else if (activity._fileAction == "file_deleted") {
+                activity._message =QObject:: tr("You deleted %1").arg(fileName);
+            } else if (activity._fileAction == "file_created") {
+                activity._message = QObject::tr("You created %1").arg(fileName);
+            } else {
+                activity._message = QObject::tr("You changed %1").arg(fileName);
+            }
+
+            if(activity._fileAction != "file_deleted") {
+                auto remotePath = folder->remotePath();
+                remotePath.append(activity._fileAction == "file_renamed" ? item->_renameTarget : activity._file);
+                PreviewData preview;
+                preview._source = account->url().toString() + QLatin1String("/index.php/apps/files/api/v1/thumbnail/150/150/") + remotePath;
+                activity._previews.append(preview);
+            }
+
+        } else {
+            activity._subject = item->_errorString;
+        }
+
+        return activity;
     }
 }

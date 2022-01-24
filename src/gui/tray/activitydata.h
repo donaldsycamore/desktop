@@ -18,6 +18,10 @@
 #include <QtCore>
 #include <QIcon>
 
+#include "syncfileitem.h"
+#include "folder.h"
+#include "account.h"
+
 namespace OCC {
 /**
  * @brief The ActivityLink class describes actions of an activity
@@ -87,7 +91,8 @@ public:
         SyncFileItemType
     };
 
-    static Activity fromActivityJson(QJsonObject json);
+    static Activity fromActivityJson(const QJsonObject json, const QString accName);
+    static Activity fromSyncFileItemPtr(const SyncFileItemPtr item, const AccountPtr account, const Folder *folder);
 
     struct RichSubjectParameter {
         QString type;    // Required
