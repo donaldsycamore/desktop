@@ -496,7 +496,7 @@ bool User::isUnsolvableConflict(const SyncFileItemPtr &item) const
 
 void User::processCompletedSyncItem(const Folder *folder, const SyncFileItemPtr &item)
 {
-    Activity activity = Activity::fromSyncFileItemPtr(item, account(), folder);
+    const Activity activity = Activity::fromSyncFileItemPtr(item, account(), folder);
 
     const auto fileName = QFileInfo(item->_originalFile).fileName();
 
