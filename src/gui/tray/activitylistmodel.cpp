@@ -496,7 +496,7 @@ void ActivityListModel::triggerDefaultAction(int activityIndex)
     }
 
     const auto modelIndex = index(activityIndex);
-    const auto path = data(modelIndex, PathRole).toUrl();
+    const auto path = data(modelIndex, PathRole).toString();
 
     const auto activity = _finalList.at(activityIndex);
     if (activity._status == SyncFileItem::Conflict) {
@@ -546,8 +546,8 @@ void ActivityListModel::triggerDefaultAction(int activityIndex)
         return;
     }
 
-    if (path.isValid()) {
-        QDesktopServices::openUrl(path);
+    if (!path.isEmpty()) {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
     } else {
         const auto link = data(modelIndex, LinkRole).toUrl();
         Utility::openBrowser(link);
