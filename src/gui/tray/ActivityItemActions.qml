@@ -78,7 +78,7 @@ RowLayout {
         id: moreActionsButtonContainer
 
         Layout.preferredWidth: parent.height
-        Layout.preferredHeight: parent.height
+        Layout.fillHeight: true
 
         active: root.displayActions && (root.activityLinks.length > root.maxActionButtons)
 
