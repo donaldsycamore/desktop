@@ -341,7 +341,7 @@ void ActivityListModel::ingestActivities(const QJsonArray activities)
     for (const auto activ : activities) {
         auto json = activ.toObject();
 
-        const Activity a = Activity::fromActivityJson(json, _accountState->account()->displayName());
+        const Activity a = Activity::fromActivityJson(json, _accountState->account());
 
         list.append(a);
         _currentItem = list.last()._id;
