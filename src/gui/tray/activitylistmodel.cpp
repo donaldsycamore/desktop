@@ -117,10 +117,11 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     const auto getFilePath = [&]() {
-        if (!a._file.isEmpty()) {
+        const auto fileName = a._fileAction == QStringLiteral("file_renamed") ? a._renamedFile : a._file;
+        if (!fileName.isEmpty()) {
             const auto folder = FolderMan::instance()->folder(a._folder);
 
-            const QString relPath = folder ? folder->remotePath() + a._file : a._file;
+            const QString relPath = folder ? folder->remotePath() + fileName : fileName;
 
             const auto localFiles = FolderMan::instance()->findFileInLocalFolders(relPath, ast->account());
 
@@ -131,7 +132,7 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
             // If this is an E2EE file or folder, pretend we got no path, hiding the share button which is what we want
             if (folder) {
                 SyncJournalFileRecord rec;
-                folder->journalDb()->getFileRecord(a._file.mid(1), &rec);
+                folder->journalDb()->getFileRecord(fileName.mid(1), &rec);
                 if (rec.isValid() && (rec._isE2eEncrypted || !rec._e2eMangledName.isEmpty())) {
                     return QString();
                 }

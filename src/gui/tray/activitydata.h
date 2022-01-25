@@ -80,6 +80,7 @@ public:
     QString _message;
     QString _folder;
     QString _file;
+    QString _renamedFile;
     QUrl _link;
     QDateTime _dateTime;
     qint64 _expireAtMsecs = -1;
