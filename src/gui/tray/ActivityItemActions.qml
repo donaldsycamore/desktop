@@ -73,16 +73,16 @@ RowLayout {
         }
     }
 
-    Item {
+    Loader {
         // actions that do not fit maxActionButtons limit, must be put into a context menu
         id: moreActionsButtonContainer
 
         Layout.preferredWidth: parent.height
         Layout.preferredHeight: parent.height
 
-        visible: root.displayActions && (root.activityLinks.length > root.maxActionButtons)
+        active: root.displayActions && (root.activityLinks.length > root.maxActionButtons)
 
-        Button {
+        sourceComponent: Button {
             id: moreActionsButton
 
             anchors.fill: parent
@@ -130,6 +130,5 @@ RowLayout {
                 }
             }
         }
-
     }
 }
