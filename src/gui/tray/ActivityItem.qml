@@ -15,20 +15,7 @@ MouseArea {
 
     property bool isChatActivity: model.objectType === "chat" || model.objectType === "room"
 
-    function activityLinksFiltered(activityLinks) {
-        // filter out the "dismiss" action for non-chat activities as per design (we will use a seperate X button for it)
-        if (root.isChatActivity) {
-            return activityLinks;
-        }
-
-        var filtered = activityLinks.filter(function(link) {
-            return link.verb === "DELETE";
-        });
-
-        return filtered;
-    }
-
-    property var linksForActionButtons: root.activityLinksFiltered(model.links)
+    property var linksForActionButtons: root.isChatActivity ? model.links : model.links.filter(link => link.verb === "DELETE")
 
     signal fileActivityButtonClicked(string absolutePath)
 

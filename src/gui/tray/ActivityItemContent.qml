@@ -86,15 +86,13 @@ RowLayout {
 
             anchors.fill: parent
 
-            anchors.margins: 10
+            anchors.margins: Style.roundButtonBackgroundVerticalMargins
 
             ToolTip.visible: hovered
             ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
             ToolTip.text: qsTr("Dismiss")
 
-            Accessible.role: Accessible.Button
             Accessible.name: qsTr("Dismiss")
-            Accessible.onPressAction: dismissActionButton.clicked()
 
             visible: root.showDismissButton && !shareButton.visible
 

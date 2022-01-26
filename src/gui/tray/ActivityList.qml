@@ -37,7 +37,7 @@ ScrollView {
             isFileActivityList: controlRoot.isFileActivityList
             width: activityList.contentWidth
             flickable: activityList
-            onClicked: function() {
+            onClicked: {
                 if (model.isCurrentUserFileActivity) {
                     showFileActivity(model.displayPath, model.absolutePath)
                 } else {

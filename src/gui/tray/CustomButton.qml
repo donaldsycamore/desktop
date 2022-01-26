@@ -23,12 +23,10 @@ Button {
         radius: 25
     }
 
-    contentItem: RowLayout {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.leftMargin: root.text === "" ? 5 : 10
-        anchors.rightMargin: root.text === "" ? 5 : 10
+    leftPadding: root.text === "" ? 5 : 10
+    rightPadding: root.text === "" ? 5 : 10
 
+    contentItem: RowLayout {
         Image {
             id: icon
 

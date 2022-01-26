@@ -21,47 +21,68 @@ RowLayout {
 
     signal triggerAction(int actionIndex)
 
-    function actionButtonIcon(actionIndex, color) {
-        const verb = String(root.activityLinks[actionIndex].verb);
-        const objectType = String(root.objectType);
-        if (verb === "WEB" && (objectType === "chat" || objectType === "call" || objectType === "room")) {
-            return "image://svgimage-custom-color/reply.svg" + "/" + color;
-        }
-
-        return "";
-    }
-
-    function actionButtonText(actionIndex) {
-        const verb = String(root.activityLinks[actionIndex].verb);
-        const objectType = String(root.objectType);
-        if (verb === "DELETE") {
-            return qsTr("Mark as read")
-        } else if (verb === "WEB" && objectType !== "room" && (objectType === "chat" || objectType !== "call")) {
-            return qsTr("Reply")
-        }
-
-        return root.activityLinks[actionIndex].label;
-    }
-
     Repeater {
+        id: actionsRepeater
         // a max of maxActionButtons can will get dispayed as separate buttons
-        model: root.activityLinks.length > root.maxActionButtons ? 1 : root.activityLinks.length
+        model: transformActivityLinks(root.activityLinks)
+
+        function transformActivityLinks(links) {
+            if (links.length === 0) {
+                return links;
+            }
+
+            function createNewVerbAndImageForLink(link) {
+                var image = ""
+                var imageHovered = ""
+                var newLabel = link.label
+
+                const verb = String(link.verb);
+                const objectType = String(root.objectType);
+
+                // pick proper icon
+                if (verb === "WEB" && (objectType === "chat" || objectType === "call" || objectType === "room")) {
+                    image = "image://svgimage-custom-color/reply.svg" + "/" + Style.ncBlue;
+                    imageHovered = "image://svgimage-custom-color/reply.svg" + "/" + Style.ncTextColor;
+                }
+
+                // pick proper label
+                if (verb === "DELETE") {
+                    newLabel = qsTr("Mark as read")
+                } else if (verb === "WEB" && objectType !== "room" && (objectType === "chat" || objectType !== "call")) {
+                    newLabel = qsTr("Reply")
+                }
+
+                return { label: newLabel, imageSource: image, imageSourceHovered: imageHovered }
+            }
+
+            if (links.length > root.maxActionButtons) {
+                return [(Object.assign({}, links[0], createNewVerbAndImageForLink(links[0])))];
+            }
+
+            var reduceLinks = links.reduce(function(reduced, link, index) {
+                const linkWithIconAndLabel = Object.assign({}, link, createNewVerbAndImageForLink(link));
+                reduced.push(linkWithIconAndLabel);
+                return reduced;
+            }, []);
+
+            return reduceLinks;
+        }
 
         ActivityActionButton {
             id: activityActionButton
 
             readonly property int actionIndex: model.index
-            readonly property bool primary: model.index === 0 && root.activityLinks[actionIndex].verb !== "DELETE"
+            readonly property bool primary: model.index === 0 && model.modelData.verb !== "DELETE"
 
-            Layout.minimumWidth: primary ? 100 : 80
+            Layout.minimumWidth: primary ? Style.activityItemActionPrimaryButtonMinWidth : Style.activityItemActionSecondaryButtonMinWidth
             Layout.preferredHeight: primary ? parent.height : parent.height * 0.3
             Layout.preferredWidth: primary ? -1 : parent.height
 
-            text: root.actionButtonText(actionIndex)
-            toolTipText: root.activityLinks[actionIndex].label
+            text: model.modelData.label
+            toolTipText: model.modelData.label
 
-            imageSource: root.actionButtonIcon(actionIndex, Style.ncBlue)
-            imageSourceHover: root.actionButtonIcon(actionIndex, Style.ncTextColor)
+            imageSource: model.modelData.imageSource
+            imageSourceHover: model.modelData.imageSourceHovered
 
             textColor: imageSource !== "" ? Style.ncBlue : Style.unifiedSearchResulSublineColor
             textColorHovered: imageSource !== "" ? Style.lightHover : Style.unifiedSearchResulTitleColor
@@ -85,8 +106,8 @@ RowLayout {
             id: moreActionsButton
 
             anchors.fill: parent
-            anchors.topMargin: 10
-            anchors.bottomMargin: 10
+            anchors.topMargin: Style.roundedButtonBackgroundVerticalMargins
+            anchors.bottomMargin: Style.roundedButtonBackgroundVerticalMargins
 
             icon.source: "qrc:///client/theme/more.svg"
 
