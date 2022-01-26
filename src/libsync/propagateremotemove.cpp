@@ -19,6 +19,7 @@
 #include "common/syncjournalfilerecord.h"
 #include "filesystem.h"
 #include "common/asserts.h"
+#include <QFileInfo>
 #include <QFile>
 #include <QStringList>
 #include <QDir>
@@ -80,6 +81,16 @@ void PropagateRemoteMove::start()
 
     QString origin = propagator()->adjustRenamedPath(_item->_file);
     qCDebug(lcPropagateRemoteMove) << origin << _item->_renameTarget;
+
+    const auto newFilePathAbsolute = propagator()->fullLocalPath(_item->_renameTarget);
+    if (!QFileInfo::exists(newFilePathAbsolute)) {
+        const auto originalFilePathAbsolute = propagator()->fullLocalPath(_item->_file);
+        const auto renameSuccess = QFile::rename(originalFilePathAbsolute, newFilePathAbsolute);
+        if (!renameSuccess) {
+            done(SyncFileItem::NormalError, "File contains trailing spaces and couldn't be renamed");
+            return;
+        }
+    }
 
     QString targetFile(propagator()->fullLocalPath(_item->_renameTarget));
 

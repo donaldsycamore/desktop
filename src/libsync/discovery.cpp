@@ -395,6 +395,17 @@ void ProcessDirectoryJob::processFile(PathTuple path,
         } else {
             item->_renameTarget = localEntry.renameName;
         }
+
+        const auto originalPath = dbEntry.path();
+        const auto adjustedOriginalPath = _discoveryData->adjustRenamedPath(originalPath, SyncFileItem::Down);
+        _discoveryData->_renamedItemsLocal.insert(originalPath, path._target);
+        path._server = adjustedOriginalPath;
+        item->_file = path._server;
+        path._original = originalPath;
+        item->_originalFile = path._original;
+
+        item->_instruction = CSYNC_INSTRUCTION_RENAME;
+        item->_direction = SyncFileItem::Direction::Up;
     }
 
     if (dbEntry._modtime == localEntry.modtime && dbEntry._type == ItemTypeVirtualFile && localEntry.type == ItemTypeFile) {
