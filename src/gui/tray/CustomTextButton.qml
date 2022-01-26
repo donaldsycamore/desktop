@@ -2,36 +2,35 @@ import QtQuick 2.15
 import QtQuick.Controls 2.3
 import Style 1.0
 
-Item {
+Label {
     id: root
 
-    property string text: ""
     property string toolTipText: ""
+    property Action action: null
+    property alias acceptedButtons: mouseArea.acceptedButtons
+    property bool hovered: mouseArea.containsMouse
+
+    height: implicitHeight
 
     property color textColor: Style.unifiedSearchResulTitleColor
     property color textColorHovered: Style.unifiedSearchResulSublineColor
 
-    property alias hovered: mouseArea.containsMouse
-
-    signal clicked()
-
     Accessible.role: Accessible.Button
-    Accessible.name: root.text !== "" ? root.text : (root.toolTipText !== "" ? root.toolTipText : qsTr("Activity action button"))
-    Accessible.onPressAction: root.clicked()
+    Accessible.name: text
+    Accessible.onPressAction: root.clicked(null)
 
-    Label {
-        id: label
-        visible: root.text !== ""
-        text: root.text
-        font.underline: true
-        color: root.hovered ? root.textColorHovered : root.textColor
-        anchors.centerIn: parent
-        width: parent.width
+    text: action ? action.text : ""
+    enabled: !action || action.enabled
+    onClicked: if (action) action.trigger()
 
-        horizontalAlignment: Text.AlignLeft
-        verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideRight
-    }
+    font.underline: true
+    color: root.hovered ? root.textColorHovered : root.textColor
+    horizontalAlignment: Text.AlignHCenter
+    verticalAlignment: Text.AlignVCenter
+    elide: Text.ElideRight
+
+    signal pressed(QtObject mouse)
+    signal clicked(QtObject mouse)
 
     ToolTip {
         text: root.toolTipText
@@ -41,8 +40,10 @@ Item {
 
     MouseArea {
         id: mouseArea
-        anchors.fill: label
-        onClicked: root.clicked()
+        anchors.fill: parent
         hoverEnabled: true
+
+        onClicked: root.clicked(mouse)
+        onPressed: root.pressed(mouse)
     }
 }

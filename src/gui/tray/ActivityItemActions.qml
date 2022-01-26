@@ -54,9 +54,8 @@ RowLayout {
             readonly property bool primary: model.index === 0 && root.activityLinks[actionIndex].verb !== "DELETE"
 
             Layout.minimumWidth: primary ? 100 : 80
-            Layout.preferredHeight: parent.height
+            Layout.preferredHeight: primary ? parent.height : parent.height * 0.3
             Layout.preferredWidth: primary ? -1 : parent.height
-            Layout.fillHeight: true
 
             text: root.actionButtonText(actionIndex)
             toolTipText: root.activityLinks[actionIndex].label
