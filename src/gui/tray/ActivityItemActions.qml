@@ -100,27 +100,22 @@ RowLayout {
             ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
             ToolTip.text: qsTr("Show more actions")
 
-            Accessible.role: Accessible.Button
             Accessible.name: qsTr("Show more actions")
-            Accessible.onPressAction: moreActionsButton.clicked()
 
-            onClicked:  moreActionsButtonContextMenuContainer.open();
+            onClicked:  function() {
+                moreActionsButtonContextMenu.popup(moreActionsButton.x, moreActionsButton.y);
+            }
 
             Connections {
                 target: root.flickable
 
                 function onMovementStarted() {
-                    moreActionsButtonContextMenuContainer.close();
+                    moreActionsButtonContextMenu.close();
                 }
             }
 
             ActivityItemContextMenu {
-                id: moreActionsButtonContextMenuContainer
-
-                visible: opened
-
-                anchors.right: moreActionsButton.right
-                anchors.top: moreActionsButton.top
+                id: moreActionsButtonContextMenu
 
                 maxActionButtons: root.maxActionButtons
                 activityItemLinks: root.activityLinks
