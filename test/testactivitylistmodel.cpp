@@ -57,9 +57,6 @@ public:
         params.addQueryItem(QLatin1String("limit"), QString::number(50));
         job->addQueryParams(params);
 
-        setCurrentlyFetching(true);
-        setDoneFetching(false);
-
         job->start();
     };
 };
